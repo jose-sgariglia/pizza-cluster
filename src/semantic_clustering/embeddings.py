@@ -54,31 +54,25 @@ def load_embeddings(file_path: str) -> np.ndarray:
     return np.load(file_path)
 
 
-if __name__ == "__main__":  # Carica variabili d'ambiente da .env se necessario
-    # Configurazione dei percorsi del progetto (Aggiornato con la pipeline pulita)
+if __name__ == "__main__":
     PATH_CLEAN = os.environ.get("DATA_CLEAN_PATH") + "emails_sample_clean.parquet"
     PATH_OUT_EMB = os.environ.get("MODEL_PATH") + "embeddings/email_embeddings.npy"
-    PATH_OUT_META = os.environ.get("DATA_EXPORTED_PATH") + "emails_with_embedding_ids.parquet"
+    PATH_OUT_META = os.environ.get("DATA_INTERIM_PATH") + "emails_with_embedding_ids.parquet"
 
-    # Inizializzazione del modello
     model = load_embedding_model()
 
-    # Verifica presenza del file pulito ed esecuzione del calcolo
     if os.path.exists(PATH_CLEAN):
         print(f"Caricamento dati pre-elaborati da: {PATH_CLEAN}")
         df = pd.read_parquet(PATH_CLEAN)
-        
-        # Estraiamo la colonna "clean_text" generata dal modulo di preprocessing
+
         # Gestiamo eventuali valori mancanti convertendoli in stringhe vuote
         texts = df["clean_text"].fillna("").tolist()
         
         # Calcolo degli embedding sui testi normalizzati e privi di rumore
         embeddings = compute_embeddings(model, texts)
-        
-        # Salvataggio della matrice numerica (.npy)
+
         save_embeddings(embeddings, PATH_OUT_EMB)
-        
-        # Salvataggio dei soli ID per mappare i futuri cluster senza duplicare i testi
+
         os.makedirs(os.path.dirname(PATH_OUT_META), exist_ok=True)
         df[['id']].to_parquet(PATH_OUT_META, index=False)
         print(f"✅ Mappatura ID salvata in: {PATH_OUT_META}")
