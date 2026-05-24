@@ -15,17 +15,23 @@ L'approccio prevede l'estrazione di feature testuali dai documenti originali per
 - Training Modello
 
 # Struttura Progetto
-
+knowledge
 Il progetto deve seguire questa gerarchia per garantire il funzionamento dei percorsi relativi:
-
+```
 pizza-cluster/
 ├── data/
 │   ├── raw/        # Contiene i metadati originali (Parquet)
+│   ├── clean/      # Dei dataset sanitizzati e pronti per l'estrazione delle feature
 │   └── processed/  # Destinazione delle feature estratte
 ├── src/            # Script Python e Notebook Jupyter
+│   └── notebooks/  # Contiene i notebook per l'analisi esplorativa, la feature extraction e il clustering
+├── reports/        # Contiene i report generati dall'analisi e dal clustering
+│   └── knowledge/  # Contiene i file di contesto e diario delle modifiche, studio e approfondimenti
+├── docs/           # Contiene la documentazione tecnica del progetto
+│   └── papers/     # Contiene i paper scientifici di riferimento
 ├── Agent.md        # Questo file di contesto
 └── Diary.md        # Questo file contiene la spiegazione delle tue modifice con annesse motivazioni
-
+```
 # Vincoli
 
 * **Autorizzazione:** Non modificare o sovrascrivere nessun file senza aver chiesto ed ottenuto l'autorizzazione esplicita.
