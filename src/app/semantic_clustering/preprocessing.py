@@ -10,7 +10,6 @@ def normalize_text(text: str) -> str:
 
 def remove_urls(text: str) -> str:
     """Rimuove URL e link web (http, https, www)."""
-    # Pattern per intercettare link completi o formati web comuni
     url_pattern = r'https?://\S+|www\.\S+'
     return re.sub(url_pattern, '', text)
 
@@ -20,14 +19,9 @@ def remove_emails(text: str) -> str:
     return re.sub(email_pattern, '', text)
 
 def remove_extra_spaces(text: str) -> str:
-    """Elimina spazi multipli, tabulazioni e rinvii a capo consecutivi."""
     return re.sub(r'\s+', ' ', text).strip()
 
 def build_clean_text(subject: str, body: str) -> str:
-    """
-    Coordina la pipeline di pulizia unendo subject e body 
-    e applicando i filtri in sequenza.
-    """
     # Uniamo i campi gestendo eventuali valori nulli (NaN)
     full_text = f"{str(subject) if pd.notna(subject) else ''} {str(body) if pd.notna(body) else ''}"
     
