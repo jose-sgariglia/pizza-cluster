@@ -60,10 +60,10 @@ Il workflow riduce questo rischio separando:
 ## Procedura Prima Di Iniziare
 
 1. Leggere `AGENT.md`.
-2. Leggere `Diary.md`.
-3. Leggere `TODO.md`.
-4. Leggere `ROADMAP.md`.
-5. Controllare `TASK_BOARD.md`.
+2. Leggere `ROADMAP.md`.
+3. Controllare `TASK_BOARD.md`.
+4. Leggere `DECISIONS.md`.
+5. Leggere `DATA_CONTRACTS.md`.
 6. Eseguire `git fetch` e aggiornarsi dalla branch base concordata.
 7. Dichiarare task, owner, stream, branch e file ownership.
 8. Se la task cambia architettura, schema o modello, aprire prima una proposta in `DECISIONS.md`.
@@ -145,7 +145,7 @@ Stream C: clustering e integrazione.
 
 ## Alternative
 
-- Usare solo `TODO.md`: piu' semplice, ma insufficiente per coordinare due sviluppatori su branch diverse.
+- Usare solo appunti locali come `TODO.md`: piu' semplice, ma insufficiente per coordinare due sviluppatori su branch diverse.
 - Usare issue tracker esterno: piu' strutturato, ma meno vicino alla repo locale.
 - Usare solo commenti nel diario: utile per storico, ma debole per lavoro in corso.
 

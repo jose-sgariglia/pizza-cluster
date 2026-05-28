@@ -4,7 +4,7 @@
 
 - Ogni task deve avere uno sviluppatore owner.
 - Ogni task deve dichiarare stream, branch e file ownership prima di iniziare.
-- `TODO.md` resta la lista degli obiettivi funzionali.
+- `ROADMAP.md` resta la visione degli obiettivi funzionali.
 - Questo file gestisce il lavoro operativo asincrono tra sviluppatori e assistenti.
 - Spostare un task in `Done` solo dopo test/verifica e handoff.
 
@@ -39,8 +39,8 @@ Branch proposta: `feature/preprocessing-consolidation`
 
 File scrivibili:
 
-- `TODO.md`
-- `Diary.md`
+- `TASK_BOARD.md`
+- `DECISIONS.md`
 - `docs/knowledge/03_cleaning_feature_engineering.md`
 
 File da leggere:

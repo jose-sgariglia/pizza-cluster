@@ -21,7 +21,7 @@ Completato:
 
 In sospeso:
 
-- Chiarire e completare il task TODO sul preprocessing, gia' parzialmente coperto dalla pipeline esistente.
+- Chiarire e completare il task condiviso sul preprocessing, gia' parzialmente coperto dalla pipeline esistente.
 - Estendere feature engineering in modo misurabile.
 - Progettare e validare clustering.
 - Definire naming/interpretazione cluster.
@@ -54,7 +54,7 @@ Output:
 - Revisione della pipeline in `src/utils/data_processing.py`.
 - Documento aggiornato in `docs/knowledge/03_cleaning_feature_engineering.md`.
 - Notebook di validazione aggiornato se necessario.
-- TODO aggiornato solo dopo approvazione.
+- `TASK_BOARD.md` aggiornato solo dopo approvazione.
 
 Decisioni da approvare:
 
@@ -246,7 +246,7 @@ Regole pratiche:
 - Prima di aprire PR: rebase o merge dalla base concordata, test con `uv run python -m pytest -q`.
 - Ogni PR deve dichiarare quali contratti dati cambia.
 - Evitare PR grandi che mescolano pipeline, notebook, documentazione e refactor non necessari.
-- Le modifiche a `DATA_CONTRACTS.md`, `.env.sample`, `requirements.txt`, `TODO.md` e `Diary.md` vanno trattate come punti di coordinamento.
+- Le modifiche a `DATA_CONTRACTS.md`, `.env.sample`, `requirements.txt`, `TASK_BOARD.md` e `DECISIONS.md` vanno trattate come punti di coordinamento.
 
 ### Pull Request E Review
 
@@ -329,12 +329,12 @@ Pro:
 
 Contro:
 
-- Duplica parzialmente `TODO.md` se non definiamo bene la differenza.
+- Richiede disciplina per non trasformarlo in un diario personale.
 
 Proposta di separazione:
 
-- `TODO.md`: obiettivi funzionali di progetto.
-- `TASK_BOARD.md`: pianificazione operativa giornaliera per agenti.
+- `TASK_BOARD.md`: pianificazione operativa condivisa tra sviluppatori.
+- `TODO.md`: eventuale nota personale locale, non versionata.
 
 ### `DECISIONS.md`
 
@@ -397,4 +397,4 @@ Contro:
 2. Allineare `AGENTS_COLLABORATION.md` e `TASK_BOARD.md` allo scenario Git/GitHub asincrono.
 3. Definire branch base di lavoro: `main` diretto o branch `develop/integration`.
 4. Assegnare formalmente stream A embeddings e stream B feature engineering.
-5. Decidere se chiudere il TODO sul preprocessing o trasformarlo in sotto-task piu' specifici.
+5. Decidere se chiudere il task preprocessing o trasformarlo in sotto-task piu' specifici.

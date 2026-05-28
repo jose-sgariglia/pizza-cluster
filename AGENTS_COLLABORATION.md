@@ -88,6 +88,11 @@ File sensibili da modificare uno alla volta:
 - `requirements.txt`
 - moduli condivisi in `src/utils`
 
+Note:
+
+- `Diary.md` e `TODO.md` sono appunti locali non versionati.
+- Lo stato condiviso deve vivere in `TASK_BOARD.md`, `DECISIONS.md`, `DATA_CONTRACTS.md` e nelle PR GitHub.
+
 ## Git/GitHub
 
 Branch consigliate:

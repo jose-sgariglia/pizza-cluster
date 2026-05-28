@@ -43,15 +43,18 @@ Se non puoi verificare:
 
 ## 3. Workflow obbligatorio
 
-1.  Leggere `Diary.md`
-2.  Leggere `TODO.md`
-3.  Scegliere task
-4.  Progettare pipeline
-5.  Aspettare approvazione
-6.  Implementare
-7.  Testare
-8.  Documentare
-9.  Aggiornare TODO
+1.  Leggere `ROADMAP.md`
+2.  Leggere `TASK_BOARD.md`
+3.  Leggere `DECISIONS.md`
+4.  Leggere `DATA_CONTRACTS.md`
+5.  Leggere eventuale diario locale se presente
+6.  Scegliere task
+7.  Progettare pipeline
+8.  Aspettare approvazione
+9.  Implementare
+10. Testare
+11. Documentare
+12. Aggiornare task board, decisioni o contratti quando necessario
 
 ------------------------------------------------------------------------
 
@@ -211,9 +214,16 @@ Creare una knowledge base progressiva per sviluppatori umani.
 
     README.md
     AGENT.md
-    TODO.md
-    Diary.md
+    ROADMAP.md
+    TASK_BOARD.md
+    DECISIONS.md
+    DATA_CONTRACTS.md
     requirements.txt
+
+File locali opzionali non versionati:
+
+    Diary.md
+    TODO.md
 
 ------------------------------------------------------------------------
 
@@ -277,11 +287,16 @@ Pipeline:
 
 ## 10. Tracciabilità
 
-Ogni modifica autorizzata aggiorna:
+Ogni modifica autorizzata aggiorna almeno uno dei documenti condivisi rilevanti:
 
-`Diary.md`
+- `TASK_BOARD.md` per avanzamento operativo e handoff
+- `DECISIONS.md` per decisioni tecniche approvate
+- `DATA_CONTRACTS.md` per cambi a path, schema o artefatti dati
+- `docs/knowledge/` per concetti avanzati o note metodologiche
 
-Formato:
+`Diary.md` e `TODO.md` sono file locali opzionali, non versionati. Possono essere usati come appunti personali dello sviluppatore o dell'assistente, ma non devono essere fonte primaria di coordinamento Git/GitHub.
+
+Formato handoff consigliato:
 
 ``` md
 YYYY-MM-DD
@@ -291,13 +306,17 @@ Checkpoint
 Intervento
 
 Motivazione tecnica
+
+Test eseguiti
+
+Rischi residui
 ```
 
 ------------------------------------------------------------------------
 
-## 11. TODO policy
+## 11. Task policy
 
-L'agente può proporre task.
+L'agente può proporre task in `TASK_BOARD.md`.
 
 NON può:
 
@@ -305,6 +324,8 @@ NON può:
 -   rimuoverli
 
 senza approvazione.
+
+`TODO.md`, se presente localmente, e' una nota personale non condivisa.
 
 ------------------------------------------------------------------------
 
@@ -324,8 +345,10 @@ senza approvazione.
 
 Prima di implementare:
 
--   letto TODO?
--   letto Diary?
+-   letto ROADMAP?
+-   letto TASK_BOARD?
+-   letto DECISIONS?
+-   letto DATA_CONTRACTS?
 -   ottenuta approvazione?
 -   documentazione aggiornata?
 -   knowledge aggiornata?
