@@ -71,3 +71,53 @@ Approvazione:
 
 - Richiesta esplicita dell'utente del 2026-05-27.
 
+## 2026-05-28 - Non rimuovere stop words da combined_text embeddings
+
+Stato: Approved
+
+Contesto:
+
+`combined_text` e' l'input della pipeline embeddings baseline. Il TODO storico citava rimozione stop words e normalizzazione testuale, ma la pipeline attuale usa un cleaning conservativo: normalizzazione whitespace, preservazione delle redazioni e nessuna rimozione di token informativi.
+
+Decisione:
+
+Non rimuovere stop words da `combined_text` usato per sentence embeddings. Eventuali trasformazioni piu' aggressive saranno valutate come colonne ausiliarie per feature statistiche o analisi interpretabili, non come sostituzione implicita dell'input embeddings.
+
+Alternative considerate:
+
+- Rimuovere stop words direttamente da `combined_text`.
+- Normalizzare subito email, nomi, forward headers e boilerplate dentro `combined_text`.
+- Creare un secondo campo testuale per feature statistiche.
+- Mantenere solo la pipeline corrente senza decisione esplicita.
+
+Pro:
+
+- Preserva contesto sintattico e semantico utile ai sentence embeddings.
+- Mantiene confrontabile la baseline embeddings gia' prodotta.
+- Evita rigenerazioni non controllate degli embeddings.
+- Permette feature interpretabili separate in task successivi.
+
+Contro:
+
+- Non riduce rumore lessicale nel campo embeddings.
+- Lascia ancora da valutare firme, forward headers e boilerplate email.
+- Richiede task successivi se servono feature statistiche piu' pulite.
+
+Impatto:
+
+- Nessun cambio schema immediato.
+- Nessun cambio agli embeddings gia' generati.
+- `src/utils/data_processing.py` resta invariato.
+- La policy preprocessing viene documentata in knowledge base.
+- Nuove colonne ausiliarie future richiederanno proposta e aggiornamento di `DATA_CONTRACTS.md`.
+
+File o artefatti coinvolti:
+
+- `src/utils/data_processing.py`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- `DATA_CONTRACTS.md`
+- `data/embeddings/email_embeddings.npy`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-05-28 dopo proposta di medio termine su branch `feature/preprocessing-consolidation`.

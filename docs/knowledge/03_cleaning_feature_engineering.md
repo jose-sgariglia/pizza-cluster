@@ -47,6 +47,21 @@ Le parti censurate non vengono modificate, rimosse o riscritte.
 
 La pipeline crea solo `has_redaction`, un flag euristico che segnala marker come `redacted`, `withheld`, `sealed`, blocchi `XXXX` o caratteri oscuranti. Il testo rimane preservato in `content_clean` e `combined_text`, salvo normalizzazione degli spazi.
 
+## Policy operativa preprocessing
+
+La pipeline corrente usa cleaning conservativo per preservare il contenuto utile agli embeddings. `combined_text` normalizza whitespace, combina subject e corpo markdown, conserva redazioni e non rimuove stop words.
+
+La rimozione stop words non e' applicata all'input embeddings per evitare perdita di contesto sintattico e semantico nei sentence embeddings. Eventuali trasformazioni piu' aggressive vanno introdotte come colonne ausiliarie per feature statistiche o analisi interpretabili, non come sostituzione implicita di `combined_text`.
+
+Questa policy mantiene confrontabile la baseline embeddings gia' prodotta. Se in futuro si introduce una colonna testuale alternativa, il cambio dovra' essere trattato come modifica di contratto dati e validato con test e confronto embeddings/clustering.
+
+Decisioni ancora aperte:
+
+- normalizzazione email e nomi;
+- rimozione o tagging di forward headers;
+- gestione boilerplate e firme;
+- eventuale colonna dedicata per feature statistiche.
+
 ## Colonne escluse nella prima pipeline
 
 - `content_html`: quasi sempre nullo e potenzialmente molto rumoroso quando presente.
@@ -59,6 +74,7 @@ La pipeline crea solo `has_redaction`, un flag euristico che segnala marker come
 - `has_redaction` e' euristico e va raffinato dopo revisione mirata.
 - La pipeline non rimuove ancora firme, forward header o boilerplate email.
 - La pipeline non normalizza ancora entita', nomi o indirizzi email.
+- La pipeline non rimuove stop words da `combined_text` per scelta metodologica approvata.
 
 ## Validazione su sample
 
@@ -91,6 +107,12 @@ Il cleaning rende il dataset coerente senza alterare il raw originale. Serve a r
 
 Il feature engineering crea variabili derivate dai dati originali. Serve a rendere osservabili caratteristiche utili, come lunghezza testo, presenza allegati, temporalita' o redazioni. In questa fase usiamo feature grezze e interpretabili per guidare analisi e modelli futuri.
 
+Le stop words sono parole molto frequenti, come articoli, preposizioni e ausiliari. In modelli bag-of-words o TF-IDF possono essere filtrate per ridurre rumore e dimensionalita'. Con sentence embeddings moderni vanno trattate con cautela perche' il modello usa anche contesto, ordine e funzione grammaticale.
+
+I sentence embeddings sono vettori densi che rappresentano il significato di frasi o documenti. Servono per similarita', clustering e retrieval semantico. In questo progetto sono sensibili al testo di input, quindi modifiche aggressive a `combined_text` devono essere misurate e non introdotte implicitamente.
+
+TF-IDF e bag-of-words trasformano testi in vettori sparsi basati su frequenze di token. Servono per feature interpretabili, keyword extraction e baseline semplici. Sono piu' adatti a colonne ausiliarie o analisi cluster che al testo semantico usato per embeddings.
+
 ## Approfondimenti
 
 Documentazione:
@@ -98,7 +120,25 @@ Documentazione:
 - pandas text data: https://pandas.pydata.org/docs/user_guide/text.html
 - pandas time series: https://pandas.pydata.org/docs/user_guide/timeseries.html
 - scikit-learn feature extraction: https://scikit-learn.org/stable/modules/feature_extraction.html
+- Sentence Transformers documentation: https://sbert.net/
+- BGE small EN v1.5 model card: https://huggingface.co/BAAI/bge-small-en-v1.5
 
-Risorsa studio:ò
+Paper:
+
+- Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks: https://arxiv.org/abs/1908.10084
+
+Risorsa studio:
 
 - Google Machine Learning Crash Course, data preparation: https://developers.google.com/machine-learning/data-prep
+- Google Machine Learning Crash Course: https://developers.google.com/machine-learning/crash-course
+
+## Argomenti da studiare / approfondire per la comprensione
+
+- Cleaning conservativo vs cleaning aggressivo
+- Stop words
+- Sentence embeddings
+- TF-IDF
+- Bag-of-words
+- Feature engineering testuale
+- Boilerplate email
+- Forward headers
