@@ -193,7 +193,12 @@ def extract_sample_from_local_parquet(
 
     Example:
         ```python
-        extract_sample_from_local_parquet("data/raw/jmail_emails.parquet", "data/raw/jmail_emails_sample.parquet", 100)
+        extract_sample_from_local_ntazione:
+
+- pandas text data: https://pandas.pydata.org/docs/user_guide/text.html
+- pandas time series: https://pandas.pydata.org/docs/user_guide/timeseries.html
+- scikit-learn feature extraction: https://scikit-learn.org/stable/modules/feature_extraction.html
+parquet("data/raw/jmail_emails.parquet", "data/raw/jmail_emails_sample.parquet", 100)
         ```
     """
 
