@@ -12,7 +12,7 @@
 
 ### Correggere docstring contaminata in data extraction
 
-Owner: da assegnare
+Owner: Filippo (Antigravity)
 Stream: manutenzione
 Branch proposta: `fix/data-extraction-docstring`
 
@@ -33,7 +33,7 @@ Note:
 
 ### Consolidare task preprocessing
 
-Owner: da assegnare
+Owner: José (Codex)
 Stream: feature engineering/documentazione
 Branch proposta: `feature/preprocessing-consolidation`
 
@@ -56,7 +56,7 @@ Output:
 
 ### Preparare contratto dati processed
 
-Owner: da assegnare
+Owner: José (Codex)
 Stream: feature engineering/documentazione
 Branch proposta: `feature/processed-contracts`
 
@@ -78,7 +78,7 @@ Output:
 
 ### Proposta feature engineering fase 2
 
-Owner proposto: sviluppatore con Antigravity
+Owner proposto: Filippo (Antigravity)
 Stream: feature engineering
 Branch proposta: `feature/feature-engineering`
 
@@ -96,7 +96,7 @@ Output:
 
 ### Consolidare embeddings baseline
 
-Owner proposto: sviluppatore con Codex
+Owner proposto: José (Codex)
 Stream: embeddings/studio/analisi
 Branch proposta: `feature/embeddings-baseline`
 
