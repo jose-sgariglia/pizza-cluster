@@ -31,29 +31,6 @@ Note:
 - La contaminazione e' nella docstring di `extract_sample_from_local_parquet`.
 - Non dovrebbe cambiare comportamento runtime.
 
-### Consolidare task preprocessing
-
-Owner: José (Codex)
-Stream: feature engineering/documentazione
-Branch proposta: `feature/preprocessing-consolidation`
-
-File scrivibili:
-
-- `TASK_BOARD.md`
-- `DECISIONS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
-
-File da leggere:
-
-- `src/utils/data_processing.py`
-- `tests/test_data_processing.py`
-- `src/notebooks/data_preprocessing_validation.ipynb`
-
-Output:
-
-- proposta su cosa manca realmente per chiudere il TODO preprocessing;
-- eventuale lista sotto-task.
-
 ### Preparare contratto dati processed
 
 Owner: José (Codex)
@@ -93,6 +70,53 @@ Output:
 - feature candidate;
 - test previsti;
 - impatto su clustering.
+
+### Valutare colonne ausiliarie per feature statistiche
+
+Owner proposto: da assegnare
+Stream: feature engineering/documentazione
+Branch proposta: `feature/text-stat-features`
+
+Dipendenze:
+
+- decisione approvata su `combined_text` embeddings;
+- contratto processed aggiornato se vengono aggiunte colonne.
+
+File scrivibili:
+
+- `DATA_CONTRACTS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- eventuale modulo feature, solo dopo approvazione.
+
+Output:
+
+- proposta per colonne testuali ausiliarie, ad esempio testo per statistiche o keyword extraction;
+- pro/contro rispetto a modificare `combined_text`;
+- test previsti;
+- impatto su embeddings e clustering.
+
+### Valutare boilerplate, firme e forward headers
+
+Owner proposto: da assegnare
+Stream: feature engineering/documentazione
+Branch proposta: `feature/email-boilerplate-analysis`
+
+Dipendenze:
+
+- sample processed disponibile;
+- policy preprocessing conservativa approvata.
+
+File scrivibili:
+
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- eventuali notebook diagnostici o report, previa approvazione.
+
+Output:
+
+- analisi su frequenza e impatto di boilerplate, firme e forward headers;
+- regole candidate di tagging o rimozione;
+- rischi informativi;
+- raccomandazione prima di eventuali modifiche runtime.
 
 ### Consolidare embeddings baseline
 
@@ -145,6 +169,49 @@ Nessun task in corso.
 Nessun task bloccato.
 
 ## Done
+
+### Consolidare task preprocessing
+
+Owner: José (Codex)
+Stream: feature engineering/documentazione
+Branch: `feature/preprocessing-consolidation`
+
+File modificati:
+
+- `TASK_BOARD.md`
+- `DECISIONS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+
+File letti:
+
+- `src/utils/data_processing.py`
+- `tests/test_data_processing.py`
+- `src/notebooks/data_preprocessing_validation.ipynb`
+- `DATA_CONTRACTS.md`
+
+Output:
+
+- confermato che la pipeline preprocessing e' gia' conservativa e testata;
+- approvata policy di non rimuovere stop words da `combined_text` per embeddings;
+- documentata policy operativa preprocessing;
+- proposti sotto-task per colonne ausiliarie e analisi boilerplate/forward headers.
+
+Verifica:
+
+```bash
+uv run python -m pytest tests/test_data_processing.py -q
+uv run python -m pytest -q
+```
+
+Esito:
+
+- `9 passed`
+- `17 passed`
+
+Rischi residui:
+
+- eventuali nuove colonne ausiliarie richiederanno aggiornamento di `DATA_CONTRACTS.md`;
+- normalizzazioni aggressive devono essere valutate con confronto embeddings/clustering.
 
 ### Creare documenti di coordinamento agenti
 
