@@ -10,27 +10,6 @@
 
 ## Backlog
 
-### Correggere docstring contaminata in data extraction
-
-Owner: Filippo (Antigravity)
-Stream: manutenzione
-Branch proposta: `fix/data-extraction-docstring`
-
-File scrivibili:
-
-- `src/utils/data_extraction.py`
-
-Test:
-
-```bash
-uv run python -m pytest tests/test_data_extraction.py -q
-```
-
-Note:
-
-- La contaminazione e' nella docstring di `extract_sample_from_local_parquet`.
-- Non dovrebbe cambiare comportamento runtime.
-
 ### Consolidare task preprocessing
 
 Owner: José (Codex)
@@ -145,6 +124,21 @@ Nessun task in corso.
 Nessun task bloccato.
 
 ## Done
+
+### Correggere docstring contaminata in data extraction
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: manutenzione
+Branch: `fix/data-extraction-docstring`
+PR: N/A (commit locale)
+Task: Correggere docstring contaminata in data extraction
+File modificati:
+- `src/utils/data_extraction.py`
+Test: `uv run python -m pytest tests/test_data_extraction.py -q` (Passati)
+Output: Docstring corretta
+Rischi: Nessuno
+Prossimo passo: Commit e push
 
 ### Creare documenti di coordinamento agenti
 
