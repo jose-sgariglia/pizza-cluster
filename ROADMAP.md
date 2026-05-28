@@ -152,99 +152,158 @@ Output:
 - Vista dettaglio email.
 - Istruzioni di esecuzione.
 
-## Strategia Collaborazione Codex + Antigravity
+## Strategia Collaborazione Sviluppatori + Assistenti
 
-Principio: gli agenti devono lavorare su task indipendenti, con ownership chiara dei file, evitando modifiche parallele sugli stessi moduli.
+Scenario reale: due sviluppatori lavorano in modo asincrono sullo stesso progetto Git/GitHub. Uno usa Codex, l'altro usa Antigravity. Gli assistenti non sono owner autonomi del progetto: aiutano i rispettivi sviluppatori a portare avanti stream di lavoro separati, che devono poi ricongiungersi tramite branch, pull request, review e merge.
 
-### Ruoli Proposti
+Principio: dividere il lavoro per stream funzionali indipendenti, non per singola sessione locale. Ogni stream deve avere branch dedicata, output chiari e un punto di integrazione concordato.
 
-Codex:
+### Stream Proposti
 
-- Coordinamento roadmap e vincoli di progetto.
-- Moduli core in `src/utils`.
-- Test e validazione locale.
-- Aggiornamento `Diary.md`, `TODO.md` e knowledge base.
+Stream A - Embeddings, studio e analisi
 
-Antigravity:
+Owner proposto: sviluppatore con Codex.
 
-- Notebook, report e visualizzazioni.
-- Analisi esplorative su output gia' prodotti.
-- Proposte di feature o metriche documentate.
-- Demo/API quando il contratto dati e' stabile.
+Responsabilita':
 
-Questa divisione puo' cambiare, ma ogni cambio deve essere annotato nel diario o in un file di coordinamento.
+- Ricerca modelli embedding.
+- Pipeline embeddings.
+- Confronto tra embeddings baseline e embeddings generati dopo feature engineering/preprocessing piu' raffinato.
+- Analisi metriche sugli embeddings.
+- Documentazione metodologica su modelli, parametri e tradeoff.
 
-### Regole Di Parallelizzazione
+File probabili:
 
-Task parallelizzabili:
+- `src/utils/embedding_pipeline.py`
+- `tests/test_embedding_pipeline.py`
+- `docs/embedding_research/`
+- `docs/knowledge/04_embedding_strategy_memo.md`
+- notebook/report legati agli embeddings.
 
-- Un agente lavora su modulo utility, l'altro su notebook che consuma output gia' stabile.
-- Un agente prepara documentazione knowledge base, l'altro implementa test su una funzione gia' definita.
-- Un agente esplora metriche, l'altro sistema packaging/test environment.
-- Un agente lavora su API, l'altro su demo, solo dopo contratto dati approvato.
+Stream B - Feature engineering, estrazione feature e documentazione
 
-Task non parallelizzabili senza coordinamento:
+Owner proposto: sviluppatore con Antigravity.
 
-- Due agenti sullo stesso file Python.
-- Due agenti su `TODO.md` o `Diary.md`.
-- Modifiche contemporanee a schema dati, nomi colonne o path `.env`.
-- Refactor che spostano moduli o cambiano contratti pubblici.
+Responsabilita':
 
-### Protocollo Prima Di Ogni Task
+- Feature engineering testuale e metadata.
+- Miglioramento preprocessing conservativo.
+- Estrazione feature statistiche e interpretabili.
+- Miglioramento documentazione contenutistica.
+- Aggiornamento contratti dati processed/features.
 
-Ogni task dovrebbe dichiarare:
+File probabili:
 
-- Obiettivo.
-- File ownership.
-- Input attesi.
-- Output attesi.
-- Test da eseguire.
-- Documentazione da aggiornare.
-- Dipendenze da altri task.
+- `src/utils/data_processing.py`
+- eventuale nuovo modulo feature, se approvato.
+- `tests/test_data_processing.py`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- `DATA_CONTRACTS.md`
 
-Esempio:
+Stream C - Integrazione clustering
 
-```md
-Task: aggiungere feature redaction_ratio
-Owner: Codex
-File ownership: src/utils/data_processing.py, tests/test_data_processing.py, docs/knowledge/03_cleaning_feature_engineering.md
-Input: processed/raw dataframe esistente
-Output: nuova colonna redaction_ratio e metadata aggiornati
-Test: uv run python -m pytest tests/test_data_processing.py -q
-Dipendenze: nessuna
-```
+Owner: da assegnare dopo merge degli stream A e B.
 
-### Protocollo Di Handoff
+Responsabilita':
 
-Quando un agente termina:
+- Usare embeddings e feature stabili.
+- Confrontare clustering su dati baseline e dati arricchiti.
+- Valutare metriche e interpretabilita'.
+- Proporre il modello candidato.
 
-- Riassume modifiche.
-- Elenca file toccati.
-- Riporta comandi di test eseguiti.
-- Dichiara rischi o parti non verificate.
-- Aggiorna il diario se la modifica e' significativa.
+### Punto Di Ricongiungimento A/B
 
-## File Markdown Consigliati
+Gli stream A e B possono procedere in parallelo fino a quando:
 
-Consiglio di aggiungere questi file, ma non li creo finche' non vengono approvati.
+- lo stream embeddings produce una baseline riproducibile;
+- lo stream feature engineering produce un dataset processed/features stabile;
+- `DATA_CONTRACTS.md` descrive chiaramente colonne e path;
+- entrambi gli stream hanno test verdi.
+
+Dopo il ricongiungimento:
+
+1. mergiare feature engineering su branch di integrazione;
+2. rigenerare embeddings sul dataset arricchito;
+3. confrontare embeddings baseline vs embeddings post-feature/preprocessing;
+4. documentare differenze e impatto;
+5. solo dopo avviare clustering sperimentale.
+
+### Strategia Git/GitHub
+
+Branch consigliate:
+
+- `main`: stato stabile.
+- `develop` o `integration`: branch di integrazione, se il progetto vuole separare lavoro stabile da lavoro in corso.
+- `feature/embeddings-*`: lavoro stream A.
+- `feature/feature-engineering-*`: lavoro stream B.
+- `feature/clustering-*`: lavoro dopo ricongiungimento.
+- `docs/*`: documentazione trasversale, quando non legata a una feature.
+
+Regole pratiche:
+
+- Ogni stream lavora su branch propria.
+- Prima di iniziare: `git fetch` e branch aggiornata dalla base concordata.
+- Prima di aprire PR: rebase o merge dalla base concordata, test con `uv run python -m pytest -q`.
+- Ogni PR deve dichiarare quali contratti dati cambia.
+- Evitare PR grandi che mescolano pipeline, notebook, documentazione e refactor non necessari.
+- Le modifiche a `DATA_CONTRACTS.md`, `.env.sample`, `requirements.txt`, `TODO.md` e `Diary.md` vanno trattate come punti di coordinamento.
+
+### Pull Request E Review
+
+Ogni PR dovrebbe includere:
+
+- obiettivo;
+- branch base;
+- stream di appartenenza;
+- file principali toccati;
+- test eseguiti;
+- artefatti prodotti;
+- cambi a schema dati o path;
+- note per lo sviluppatore dell'altro stream.
+
+Una PR dello stream A non deve richiedere dettagli interni dello stream B, ma deve indicare quali input si aspetta. Una PR dello stream B non deve rigenerare embeddings, ma deve rendere chiaro quando gli embeddings vanno rigenerati.
+
+### Task Parallelizzabili
+
+Parallelizzabili:
+
+- embeddings baseline mentre feature engineering evolve;
+- documentazione feature mentre embeddings vengono testati;
+- ricerca modelli embedding mentre si definiscono feature metadata;
+- notebook diagnostici su sample gia' prodotti;
+- definizione contratti dati mentre si completano test dei moduli.
+
+Da serializzare o integrare con attenzione:
+
+- cambio schema `processed`;
+- cambio colonna usata come input embedding;
+- introduzione di nuove dipendenze pesanti;
+- refactor di path `.env`;
+- clustering finale;
+- API/demo che dipendono dagli output del clustering.
+
+## File Markdown Di Coordinamento
+
+Questi file servono a coordinare il lavoro asincrono tra sviluppatori e assistenti.
 
 ### `AGENTS_COLLABORATION.md`
 
-Scopo: regole condivise tra Codex e Antigravity.
+Scopo: regole condivise tra gli sviluppatori che usano Codex e Antigravity.
 
 Contenuto:
 
-- Ruoli.
-- Regole di ownership file.
+- Stream di lavoro.
+- Regole Git/GitHub.
+- Regole di ownership per branch e file.
 - Protocollo di handoff.
 - Convenzioni per test e documentazione.
 - Come gestire conflitti.
 
 Pro:
 
-- Riduce conflitti tra agenti.
+- Riduce conflitti tra branch.
 - Evita decisioni implicite.
-- Rende piu' chiaro chi fa cosa.
+- Rende piu' chiaro chi fa cosa e quando integrare.
 
 Contro:
 
@@ -252,7 +311,7 @@ Contro:
 
 ### `TASK_BOARD.md`
 
-Scopo: task board leggera in Markdown.
+Scopo: task board leggera in Markdown per coordinare lavoro asincrono.
 
 Contenuto:
 
@@ -261,12 +320,12 @@ Contenuto:
 - In progress.
 - Blocked.
 - Done.
-- Owner e file ownership per task.
+- Owner, branch, stream e file ownership per task.
 
 Pro:
 
 - Migliora parallelizzazione.
-- Evita che due agenti lavorino sullo stesso file.
+- Evita che due sviluppatori aprano PR incompatibili.
 
 Contro:
 
@@ -325,16 +384,17 @@ Contro:
 ## Procedura Raccomandata
 
 1. Mantenere `ROADMAP.md` come visione di medio periodo.
-2. Creare `AGENTS_COLLABORATION.md` per le regole tra agenti.
-3. Creare `TASK_BOARD.md` per il lavoro operativo giornaliero.
-4. Creare `DECISIONS.md` appena iniziano scelte su clustering, feature o API.
-5. Creare `DATA_CONTRACTS.md` prima che API/demo consumino output di clustering.
-6. Prima di iniziare una task, assegnare owner e file ownership.
-7. Alla fine di ogni task, aggiornare test, documentazione e handoff.
+2. Usare `AGENTS_COLLABORATION.md` per regole tra sviluppatori, assistenti e branch.
+3. Usare `TASK_BOARD.md` per task operativi, stream, branch e owner.
+4. Usare `DECISIONS.md` per scelte tecniche approvate.
+5. Usare `DATA_CONTRACTS.md` per stabilizzare input/output tra stream.
+6. Prima di iniziare una task, dichiarare stream, branch, owner e file ownership.
+7. Alla fine di ogni PR, aggiornare test, documentazione e handoff.
 
 ## Prossime Azioni Proposte
 
 1. Correggere la docstring contaminata in `src/utils/data_extraction.py`.
-2. Creare `AGENTS_COLLABORATION.md`.
-3. Creare `TASK_BOARD.md` con i task immediati.
-4. Decidere se chiudere il TODO sul preprocessing o trasformarlo in sotto-task piu' specifici.
+2. Allineare `AGENTS_COLLABORATION.md` e `TASK_BOARD.md` allo scenario Git/GitHub asincrono.
+3. Definire branch base di lavoro: `main` diretto o branch `develop/integration`.
+4. Assegnare formalmente stream A embeddings e stream B feature engineering.
+5. Decidere se chiudere il TODO sul preprocessing o trasformarlo in sotto-task piu' specifici.

@@ -2,42 +2,75 @@
 
 ## Scopo
 
-Definire regole operative condivise per far collaborare Codex e Antigravity sul progetto Pizza Cluster senza duplicare lavoro, creare conflitti o prendere decisioni architetturali non approvate.
+Definire regole operative condivise per far collaborare due sviluppatori sul progetto Pizza Cluster. Uno sviluppatore usa Codex, l'altro usa Antigravity. Il lavoro e' asincrono e passa da Git/GitHub, branch, pull request, review e merge.
 
 Questo file integra `AGENT.md`. In caso di conflitto, `AGENT.md` ha priorita'.
 
 ## Principi
 
-- Ogni task deve avere un owner esplicito.
-- Ogni task deve dichiarare i file su cui puo' scrivere.
-- Due agenti non devono modificare lo stesso file nella stessa finestra di lavoro, salvo accordo esplicito.
+- Ogni task deve avere uno sviluppatore owner esplicito.
+- Ogni task deve dichiarare stream, branch e file principali.
+- Gli assistenti supportano gli sviluppatori, ma non sono owner autonomi delle decisioni.
+- Due branch possono procedere in parallelo se hanno contratti dati chiari.
+- Le PR devono dichiarare cambi a schema, path, dipendenze e artefatti.
 - Le decisioni architetturali richiedono proposta, pro/contro e approvazione umana.
 - Ogni modifica significativa deve lasciare traccia in documentazione, test o diario.
 - L'ambiente Python di riferimento e' `uv`.
 
-## Ruoli Di Default
+## Stream Di Lavoro
 
-Codex:
+### Stream A - Embeddings, Studio, Analisi
 
-- Coordinamento operativo.
-- Moduli core in `src/utils`.
-- Test unitari.
-- Aggiornamento `Diary.md`, `TODO.md`, `DECISIONS.md` e knowledge base.
-- Revisione dei contratti dati.
+Owner proposto: sviluppatore con Codex.
 
-Antigravity:
+Responsabilita':
 
-- Notebook in `src/notebooks`.
-- Report, figure e analisi esplorative.
-- Validazione visuale dei risultati.
-- Supporto a demo e API quando i contratti dati sono stabili.
+- ricerca modelli embedding;
+- pipeline embeddings;
+- generazione baseline;
+- confronto embeddings prima/dopo feature engineering;
+- studio metriche sugli embeddings;
+- documentazione tecnica su modelli e parametri.
 
-I ruoli possono cambiare per task specifici, ma il cambio deve essere scritto nel task board.
+Branch consigliate:
+
+- `feature/embeddings-baseline`
+- `feature/embedding-analysis`
+
+### Stream B - Feature Engineering, Estrazione Feature, Documentazione
+
+Owner proposto: sviluppatore con Antigravity.
+
+Responsabilita':
+
+- miglioramento preprocessing;
+- feature engineering testuale e metadata;
+- estrazione feature interpretabili;
+- documentazione contenutistica;
+- aggiornamento contratti dati processed/features.
+
+Branch consigliate:
+
+- `feature/feature-engineering`
+- `feature/processed-contracts`
+
+### Stream C - Integrazione Clustering
+
+Owner: da assegnare dopo ricongiungimento degli stream A e B.
+
+Responsabilita':
+
+- usare embeddings e feature stabili;
+- confrontare clustering su baseline e dati arricchiti;
+- produrre metriche e report;
+- proporre modello candidato.
 
 ## File Ownership
 
-Prima di iniziare, ogni agente deve dichiarare:
+Prima di iniziare, ogni sviluppatore deve dichiarare:
 
+- branch di lavoro;
+- stream;
 - file che intende modificare;
 - file che intende solo leggere;
 - output attesi;
@@ -55,32 +88,52 @@ File sensibili da modificare uno alla volta:
 - `requirements.txt`
 - moduli condivisi in `src/utils`
 
-## Task Parallelizzabili
+## Git/GitHub
 
-Sono generalmente parallelizzabili:
+Branch consigliate:
 
-- utility Python e notebook che consuma output gia' stabile;
-- test di un modulo e documentazione di un altro;
-- analisi esplorativa e preparazione contratti dati;
-- API e demo solo dopo contratto dati approvato;
-- knowledge base e pulizia documentale.
+- `main`: stato stabile.
+- `develop` o `integration`: integrazione, se il team decide di usarla.
+- `feature/embeddings-*`: stream A.
+- `feature/feature-engineering-*`: stream B.
+- `feature/clustering-*`: stream C.
+- `docs/*`: documentazione trasversale.
 
-## Task Non Parallelizzabili
+Regole:
 
-Richiedono coordinamento esplicito:
+- prima di iniziare, eseguire `git fetch` e aggiornarsi dalla base concordata;
+- lavorare su branch piccole e tematiche;
+- aprire PR con descrizione di obiettivo, stream, test e impatti;
+- evitare PR che mescolano refactor, nuova logica, notebook e documentazione non collegata;
+- prima del merge, rieseguire `uv run python -m pytest -q`;
+- se una PR cambia contratti dati, aggiornare `DATA_CONTRACTS.md`.
 
-- cambio schema colonne;
-- cambio path o nomi artefatti;
-- cambio variabili `.env`;
-- refactor di moduli condivisi;
-- aggiornamento simultaneo di diario o task board;
-- modifica dello stesso notebook o dello stesso modulo.
+## Parallelizzazione
+
+Parallelizzabili:
+
+- stream A genera embeddings baseline mentre stream B migliora feature engineering;
+- stream A studia modelli embedding mentre stream B documenta e testa feature;
+- stream B stabilizza `processed` e `DATA_CONTRACTS.md` mentre stream A prepara confronto;
+- notebook diagnostici su artefatti gia' prodotti;
+- documentazione non sovrapposta.
+
+Da serializzare o integrare con attenzione:
+
+- cambio schema processed;
+- cambio colonna input per embeddings;
+- introduzione dipendenze pesanti;
+- refactor path `.env`;
+- clustering finale;
+- API/demo basate sui cluster.
 
 ## Template Task
 
 ```md
 Task:
 Owner:
+Stream:
+Branch:
 Stato: Ready | In progress | Blocked | Done
 File scrivibili:
 File in sola lettura:
@@ -94,9 +147,10 @@ Rischi:
 
 ## Handoff
 
-Quando un agente termina un task deve riportare:
+Quando uno sviluppatore termina un task deve riportare:
 
 - cosa ha cambiato;
+- branch e PR, se presenti;
 - file toccati;
 - test o verifiche eseguite;
 - output prodotti;
@@ -108,6 +162,9 @@ Formato consigliato:
 ```md
 Handoff:
 Owner:
+Stream:
+Branch:
+PR:
 Task:
 File modificati:
 Test:
@@ -136,13 +193,23 @@ Eseguire un singolo file di test:
 uv run python -m pytest tests/test_nome.py -q
 ```
 
-## Gestione Conflitti
+## Ricongiungimento Stream A/B
 
-Se due agenti devono modificare lo stesso file:
+Quando embeddings e feature engineering sono entrambi pronti:
 
-1. sospendere una delle due attivita';
-2. scegliere un solo owner temporaneo;
-3. far produrre all'altro agente solo note o proposta;
-4. applicare le modifiche in una sequenza definita;
-5. rieseguire test e aggiornare handoff.
+1. mergiare lo stream B su branch di integrazione;
+2. verificare `DATA_CONTRACTS.md`;
+3. rigenerare embeddings sul processed/features aggiornato;
+4. confrontare baseline vs dataset arricchito;
+5. documentare differenze;
+6. aprire stream C clustering.
 
+## Gestione Conflitti Git
+
+Se due branch modificano lo stesso file:
+
+1. identificare quale stream possiede il contratto del file;
+2. fare merge/rebase dalla base concordata;
+3. risolvere conflitti mantenendo il contratto dati aggiornato;
+4. rieseguire test;
+5. dichiarare nella PR come e' stato risolto il conflitto.
