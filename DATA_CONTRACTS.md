@@ -86,13 +86,21 @@ Colonne prodotte principali:
 - `combined_text_length`;
 - `has_subject`;
 - `has_redaction`;
+- `redaction_count`;
+- `word_count`;
+- `uppercase_ratio`;
 - `sent_at_datetime`;
 - `sent_year`;
 - `sent_month`;
 - `sent_dayofweek`;
+- `sent_hour`;
+- `is_weekend`;
 - `has_sender`;
+- `sender_domain`;
 - `has_attachments`;
-- `recipient_count_estimate`.
+- `attachment_count`;
+- `recipient_count_estimate`;
+- `is_epstein_involved`.
 
 Vincoli:
 
