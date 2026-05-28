@@ -32,23 +32,7 @@ Output:
 - path input/output;
 - regole su null e tipi.
 
-### Proposta feature engineering fase 2
 
-Owner proposto: Filippo (Antigravity)
-Stream: feature engineering
-Branch proposta: `feature/feature-engineering`
-
-File scrivibili:
-
-- `DECISIONS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
-
-Output:
-
-- proposta con pro/contro;
-- feature candidate;
-- test previsti;
-- impatto su clustering.
 
 ### Valutare colonne ausiliarie per feature statistiche
 
@@ -148,6 +132,23 @@ Nessun task in corso.
 Nessun task bloccato.
 
 ## Done
+
+### Proposta feature engineering fase 2
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: feature engineering
+Branch: `feature/feature-engineering`
+PR: N/A (local)
+Task: Proposta feature engineering fase 2
+File modificati:
+- `DECISIONS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+Test: Nessun file sorgente modificato, solo update documentale.
+Output: Feature ausiliarie proposte, approvate e registrate.
+Rischi: Durante l'implementazione andrà aggiornato DATA_CONTRACTS.md.
+Prossimo passo: Sviluppo in src/utils/data_processing.py
+
 #### 
 ### Consolidare task preprocessing
 
