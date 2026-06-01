@@ -28,6 +28,12 @@ class DataProcessingTestCase(unittest.TestCase):
         self.assertTrue(has_redaction_marker(text))
         self.assertEqual(text, "This line contains [REDACTED] content")
 
+    def test_count_redaction_markers_counts_correctly(self) -> None:
+        from src.utils.data_processing import count_redaction_markers
+        self.assertEqual(count_redaction_markers("Here is a [REDACTED] and another [SEALED]"), 2)
+        self.assertEqual(count_redaction_markers("Clean text"), 0)
+        self.assertEqual(count_redaction_markers(None), 0)
+
     def test_estimate_recipient_count_deduplicates_basic_recipients(self) -> None:
         count = estimate_recipient_count("A@example.com, b@example.com", "a@example.com; c@example.com", None)
         self.assertEqual(count, 3)
@@ -79,6 +85,12 @@ class DataProcessingTestCase(unittest.TestCase):
         self.assertEqual(len(processed), 1)
         self.assertIn("combined_text", processed.columns)
         self.assertIn("recipient_count_estimate", processed.columns)
+        self.assertIn("redaction_count", processed.columns)
+        self.assertIn("sent_hour", processed.columns)
+        self.assertIn("is_weekend", processed.columns)
+        self.assertIn("sender_domain", processed.columns)
+        self.assertIn("is_epstein_involved", processed.columns)
+        self.assertIn("attachment_count", processed.columns)
         self.assertEqual(metadata["removed_promotional_rows"], 1)
 
     def test_run_processing_with_limit_rejects_invalid_negative_limit(self) -> None:
