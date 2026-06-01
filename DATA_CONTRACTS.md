@@ -56,7 +56,7 @@ Vincoli:
 
 ## Processed Emails
 
-Stato: Draft
+Stato: Draft verificato su sample
 
 Path:
 
@@ -73,7 +73,30 @@ Prodotto da:
 
 Colonne richieste in input:
 
-- subset disponibile delle colonne raw supportate.
+- subset disponibile delle colonne raw supportate da `KEEP_COLUMNS`;
+- colonne usate per feature se presenti:
+  - `subject`
+  - `content_markdown`
+  - `sent_at`
+  - `sender`
+  - `attachments`
+  - `to_recipients`
+  - `cc_recipients`
+  - `bcc_recipients`
+  - `is_promotional`
+
+Regole di trasformazione:
+
+- seleziona solo le colonne raw supportate disponibili;
+- esclude righe con `is_promotional == True`;
+- conserva righe con `is_promotional` nullo o non vero;
+- normalizza whitespace in `subject_clean` e `content_clean`;
+- costruisce `combined_text` concatenando `subject_clean` e `content_clean`;
+- rimuove righe con `combined_text` vuoto;
+- conserva redazioni e marker sensibili nel testo;
+- segnala redazioni tramite `has_redaction`;
+- non rimuove stop words da `combined_text`;
+- non normalizza ancora email, nomi, firme, boilerplate o forward headers.
 
 Colonne prodotte principali:
 
@@ -94,16 +117,83 @@ Colonne prodotte principali:
 - `has_attachments`;
 - `recipient_count_estimate`.
 
+Schema colonne processed:
+
+| Colonna | Tipo atteso | Null | Origine | Note |
+| --- | --- | --- | --- | --- |
+| `id` | string | dipende dal raw | raw | Identificativo email. |
+| `doc_id` | string | dipende dal raw | raw | Identificativo documento. |
+| `message_index` | integer | dipende dal raw | raw | Indice messaggio nel documento/drop. |
+| `sender` | string | ammesso | raw | Mittente raw, non normalizzato. |
+| `subject` | string | ammesso | raw | Oggetto raw. |
+| `to_recipients` | string | ammesso | raw | Destinatari raw, non normalizzati. |
+| `cc_recipients` | string | ammesso | raw | Destinatari CC raw, non normalizzati. |
+| `bcc_recipients` | string | ammesso | raw | Destinatari BCC raw, non normalizzati. |
+| `sent_at` | string | ammesso | raw | Timestamp raw. |
+| `content_markdown` | string | ammesso | raw | Corpo markdown raw. |
+| `attachments` | integer | ammesso | raw | Conteggio allegati raw quando disponibile. |
+| `email_drop_id` | string | dipende dal raw | raw | Identificativo drop. |
+| `is_promotional` | boolean | ammesso | raw | Le righe con valore `True` sono escluse. |
+| `release_batch` | integer | dipende dal raw | raw | Batch di rilascio. |
+| `epstein_is_sender` | boolean | ammesso | raw | Flag raw. |
+| `all_participants` | string | ammesso | raw | Partecipanti raw, non normalizzati. |
+| `subject_clean` | string | no | pipeline | Whitespace normalizzato; stringa vuota se input non testuale. |
+| `content_clean` | string | no | pipeline | Whitespace normalizzato; redazioni preservate. |
+| `combined_text` | string | no | pipeline | Campo testuale primario per embeddings; deve essere non vuoto. |
+| `subject_length` | integer | no | pipeline | Lunghezza di `subject_clean`. |
+| `content_length` | integer | no | pipeline | Lunghezza di `content_clean`. |
+| `combined_text_length` | integer | no | pipeline | Lunghezza di `combined_text`. |
+| `has_subject` | boolean | no | pipeline | `True` se `subject_clean` non e' vuoto. |
+| `has_redaction` | boolean | no | pipeline | Flag euristico; non modifica il testo. |
+| `sent_at_datetime` | datetime UTC | ammesso | pipeline | Parsing di `sent_at` con errori convertiti a null. |
+| `sent_year` | nullable integer | ammesso | pipeline | Anno derivato da `sent_at_datetime`. |
+| `sent_month` | nullable integer | ammesso | pipeline | Mese derivato da `sent_at_datetime`. |
+| `sent_dayofweek` | nullable integer | ammesso | pipeline | Giorno settimana derivato da `sent_at_datetime`. |
+| `has_sender` | boolean | no | pipeline | `True` se `sender` contiene testo non vuoto. |
+| `has_attachments` | boolean | no | pipeline | `True` se `attachments > 0`; null trattato come 0. |
+| `recipient_count_estimate` | nullable integer | ammesso | pipeline | Stima grezza da destinatari; da non trattare come feature obbligatoria finche' non viene validata. |
+
 Vincoli:
 
 - `combined_text` deve essere non vuoto nelle righe finali.
+- `combined_text` e' il campo testuale default per `Email Embeddings`.
+- `combined_text` mantiene stop words, redazioni, nomi, indirizzi email, boilerplate e forward headers.
 - Le redazioni non vengono rimosse dal testo.
 - `is_promotional == True` viene escluso.
+- Le colonne raw mantenute non sono normalizzate.
+- Le nuove colonne ausiliarie per feature statistiche richiedono aggiornamento di questo contratto.
+- `recipient_count_estimate` e' una stima euristica e puo' essere nullo negli artefatti correnti; prima di usarlo per clustering o feature obbligatorie va verificato o corretto.
 
 Metadata:
 
 - full: `data/metadata/jmail_processing_metadata.json`
 - sample: `data/metadata/jmail_processing_sample_metadata.json`
+
+Campi metadata attesi:
+
+- `processed_at_utc`
+- `input_rows`
+- `selected_rows`
+- `after_promotional_filter_rows`
+- `output_rows`
+- `removed_promotional_rows`
+- `removed_empty_text_rows`
+- `output_columns`
+- `redaction_policy`
+- `execution_mode`
+- `input_limit`
+
+Verifica sample corrente:
+
+- metadata: `data/metadata/jmail_processing_sample_metadata.json`
+- input rows: 1000
+- output rows: 355
+- output columns: 31
+- record promozionali rimossi: 645
+- righe senza testo rimosse: 0
+- `combined_text` vuoto: 0 righe nel sample letto
+- `is_promotional == True`: 0 righe nel sample letto
+- nota: `recipient_count_estimate` ha valori null nel sample corrente e va trattato come campo nullable.
 
 ## Email Embeddings
 
@@ -190,4 +280,3 @@ Decisioni mancanti:
 - formato risposta;
 - paginazione;
 - campi esposti per email redatte o sensibili.
-
