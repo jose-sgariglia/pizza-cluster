@@ -94,7 +94,8 @@ Regole di trasformazione:
 - costruisce `combined_text` concatenando `subject_clean` e `content_clean`;
 - rimuove righe con `combined_text` vuoto;
 - conserva redazioni e marker sensibili nel testo;
-- segnala redazioni tramite `has_redaction`;
+- segnala redazioni tramite `has_redaction`, includendo marker come `[redacted]`, `[REDACTED]`, withheld/sealed, sequenze `XXXX` e blocchi grafici;
+- quando nessun campo recipient contiene destinatari utilizzabili, valorizza `to_recipients` a `Unknown` e imposta `person_unknown`;
 - non rimuove stop words da `combined_text`;
 - non normalizza ancora email, nomi, firme, boilerplate o forward headers.
 
@@ -122,6 +123,7 @@ Colonne prodotte principali:
 - `sender_domain`;
 - `has_attachments`;
 - `attachment_count`;
+- `person_unknown`;
 - `recipient_count_estimate`;
 - `is_epstein_involved`.
 
@@ -134,7 +136,7 @@ Schema colonne processed:
 | `message_index` | integer | dipende dal raw | raw | Indice messaggio nel documento/drop. |
 | `sender` | string | ammesso | raw | Mittente raw, non normalizzato. |
 | `subject` | string | ammesso | raw | Oggetto raw. |
-| `to_recipients` | string | ammesso | raw | Destinatari raw, non normalizzati. |
+| `to_recipients` | string | ammesso | raw/pipeline | Destinatari raw, non normalizzati; `Unknown` se nessun recipient e' disponibile nella riga. |
 | `cc_recipients` | string | ammesso | raw | Destinatari CC raw, non normalizzati. |
 | `bcc_recipients` | string | ammesso | raw | Destinatari BCC raw, non normalizzati. |
 | `sent_at` | string | ammesso | raw | Timestamp raw. |
@@ -152,14 +154,23 @@ Schema colonne processed:
 | `content_length` | integer | no | pipeline | Lunghezza di `content_clean`. |
 | `combined_text_length` | integer | no | pipeline | Lunghezza di `combined_text`. |
 | `has_subject` | boolean | no | pipeline | `True` se `subject_clean` non e' vuoto. |
-| `has_redaction` | boolean | no | pipeline | Flag euristico; non modifica il testo. |
+| `has_redaction` | boolean | no | pipeline | Flag euristico; rileva anche `[redacted]`; non modifica il testo. |
+| `redaction_count` | integer | no | pipeline | Conteggio euristico marker redazione/censura. |
+| `word_count` | integer | no | pipeline | Numero parole in `combined_text`. |
+| `uppercase_ratio` | float | no | pipeline | Quota caratteri maiuscoli su lunghezza `combined_text`. |
 | `sent_at_datetime` | datetime UTC | ammesso | pipeline | Parsing di `sent_at` con errori convertiti a null. |
 | `sent_year` | nullable integer | ammesso | pipeline | Anno derivato da `sent_at_datetime`. |
 | `sent_month` | nullable integer | ammesso | pipeline | Mese derivato da `sent_at_datetime`. |
 | `sent_dayofweek` | nullable integer | ammesso | pipeline | Giorno settimana derivato da `sent_at_datetime`. |
+| `sent_hour` | nullable integer | ammesso | pipeline | Ora derivata da `sent_at_datetime`. |
+| `is_weekend` | boolean | no | pipeline | `True` se `sent_dayofweek` e' sabato o domenica. |
 | `has_sender` | boolean | no | pipeline | `True` se `sender` contiene testo non vuoto. |
 | `has_attachments` | boolean | no | pipeline | `True` se `attachments > 0`; null trattato come 0. |
-| `recipient_count_estimate` | nullable integer | ammesso | pipeline | Stima grezza da destinatari; da non trattare come feature obbligatoria finche' non viene validata. |
+| `attachment_count` | integer | no | pipeline | Conteggio allegati; null trattato come 0. |
+| `person_unknown` | boolean | no | pipeline | `True` solo se nessuno tra `to_recipients`, `cc_recipients` e `bcc_recipients` contiene destinatari utilizzabili e viene usato `Unknown`. |
+| `recipient_count_estimate` | integer | no | pipeline | Stima grezza da destinatari; `Unknown` conta come una persona non identificata. |
+| `sender_domain` | string | ammesso | pipeline | Dominio estratto da `sender`, se disponibile. |
+| `is_epstein_involved` | boolean | no | pipeline | `True` se Epstein risulta mittente o appare in `all_participants`. |
 
 Vincoli:
 
@@ -167,10 +178,14 @@ Vincoli:
 - `combined_text` e' il campo testuale default per `Email Embeddings`.
 - `combined_text` mantiene stop words, redazioni, nomi, indirizzi email, boilerplate e forward headers.
 - Le redazioni non vengono rimosse dal testo.
+- `[redacted]` viene rilevato come redazione anche in minuscolo.
+- Se nessun destinatario e' disponibile nei campi recipient, `to_recipients` viene impostato a `Unknown` e `person_unknown` a `True`.
+- `person_unknown` non rileva recipient potenzialmente censurati dentro campi recipient gia' valorizzati; per quello servirebbe una feature distinta, ad esempio `recipient_redacted`.
+- `recipient_count_estimate` non deve essere nullo nelle righe finali; in presenza di `Unknown` vale almeno 1.
 - `is_promotional == True` viene escluso.
 - Le colonne raw mantenute non sono normalizzate.
 - Le nuove colonne ausiliarie per feature statistiche richiedono aggiornamento di questo contratto.
-- `recipient_count_estimate` e' una stima euristica e puo' essere nullo negli artefatti correnti; prima di usarlo per clustering o feature obbligatorie va verificato o corretto.
+- `recipient_count_estimate` resta una stima euristica: va usato come feature quantitativa grezza, non come conteggio anagrafico certificato.
 
 Metadata:
 
@@ -188,6 +203,7 @@ Campi metadata attesi:
 - `removed_empty_text_rows`
 - `output_columns`
 - `redaction_policy`
+- `recipient_unknown_policy`
 - `execution_mode`
 - `input_limit`
 
@@ -196,12 +212,14 @@ Verifica sample corrente:
 - metadata: `data/metadata/jmail_processing_sample_metadata.json`
 - input rows: 1000
 - output rows: 355
-- output columns: 31
+- output columns: 40
 - record promozionali rimossi: 645
 - righe senza testo rimosse: 0
 - `combined_text` vuoto: 0 righe nel sample letto
 - `is_promotional == True`: 0 righe nel sample letto
-- nota: `recipient_count_estimate` ha valori null nel sample corrente e va trattato come campo nullable.
+- `recipient_count_estimate` nullo: 0 righe nel sample rigenerato
+- `person_unknown == True`: 0 righe nel sample rigenerato
+- nota: `person_unknown` e' sempre `False` nel sample rigenerato perche' ogni riga finale ha almeno un recipient utilizzabile in `to_recipients`, `cc_recipients` o `bcc_recipients`.
 
 ## Email Embeddings
 
