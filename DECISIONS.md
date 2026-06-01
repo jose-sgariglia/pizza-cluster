@@ -121,3 +121,44 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-05-28 dopo proposta di medio termine su branch `feature/preprocessing-consolidation`.
+
+## 2026-05-28 - Approvazione Feature Engineering Fase 2
+
+Stato: Approved
+
+Contesto:
+
+Per migliorare l'interpretabilita' dei cluster e fornire meta-dati utili all'analisi senza inquinare il campo semantico usato per gli embeddings (`combined_text`), e' necessario aggiungere feature numeriche, temporali e di network.
+
+Decisione:
+
+Implementare le seguenti feature ausiliarie: `redaction_count`, `word_count`, `uppercase_ratio`, `sent_hour`, `is_weekend`, `sender_domain`, `is_epstein_involved`, `attachment_count`. Queste andranno ad arricchire il dataset elaborato.
+
+Alternative considerate:
+
+- Mantenere solo le feature attuali.
+- Aggiungere il testo di queste feature nel body dell'email (scartato per non alterare la semantica).
+
+Pro:
+
+- Aggiunge metriche quantitative potenti (ore di invio, domini, conteggio esatto file/redazioni) per la profilazione dei cluster.
+- Nessun impatto distruttivo su `combined_text`.
+
+Contro:
+
+- Aumenta il numero di colonne del dataset elaborato.
+- Richiede funzioni di parsing dedicate.
+
+Impatto:
+
+- Saranno introdotte nuove funzioni in `src/utils/data_processing.py`.
+- `DATA_CONTRACTS.md` dovra' essere aggiornato durante l'implementazione.
+
+File o artefatti coinvolti:
+
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- `DECISIONS.md`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-05-28.

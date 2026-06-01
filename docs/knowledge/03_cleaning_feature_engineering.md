@@ -62,6 +62,15 @@ Decisioni ancora aperte:
 - gestione boilerplate e firme;
 - eventuale colonna dedicata per feature statistiche.
 
+## Feature Engineering Fase 2 (Approvate)
+
+Per arricchire i metadati e migliorare l'interpretabilita' dei cluster senza intaccare `combined_text`, sono state approvate le seguenti feature ausiliarie da implementare in un prossimo step:
+
+1. **Feature di Densita' Testuale:** `redaction_count` (conteggio marker censure), `word_count` (conteggio parole), `uppercase_ratio` (percentuale maiuscole).
+2. **Feature Temporali:** `sent_hour` (ora di invio), `is_weekend` (flag sabato/domenica).
+3. **Feature di Network e Identita':** `sender_domain` (estrazione dominio mittente), `is_epstein_involved` (flag dedotto da sender e partecipanti).
+4. **Feature Allegati:** `attachment_count` (conteggio esatto dei file allegati).
+
 ## Colonne escluse nella prima pipeline
 
 - `content_html`: quasi sempre nullo e potenzialmente molto rumoroso quando presente.

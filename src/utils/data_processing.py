@@ -117,6 +117,24 @@ def has_redaction_marker(value: Any) -> bool:
     return any(pattern.search(value) is not None for pattern in REDACTION_PATTERNS)
 
 
+def count_redaction_markers(value: Any) -> int:
+    """Count redaction/censorship markers in the text.
+
+    Example:
+        ```python
+        count_redaction_markers("[REDACTED] and [SEALED]")
+        ```
+    """
+
+    if not isinstance(value, str):
+        return 0
+    combined_pattern = re.compile(
+        r"\[+\s*(?:redacted|withheld|sealed)\s*\]+|\bredacted\b|\bwithheld\b|\bsealed\b|\bX{4,}\b|[█■]{2,}",
+        re.IGNORECASE
+    )
+    return len(combined_pattern.findall(value))
+
+
 def estimate_recipient_count(*values: Any) -> int:
     """Estimate recipient count from raw recipient string fields.
 
@@ -186,13 +204,20 @@ def add_text_features(df: pd.DataFrame) -> pd.DataFrame:
         + "\n\n"
         + result["content_clean"].where(result["content_clean"] != "", "")
     ).str.strip()
-    result["subject_length"] = result["subject_clean"].str.len()
-    result["content_length"] = result["content_clean"].str.len()
-    result["combined_text_length"] = result["combined_text"].str.len()
+    result["subject_length"] = result["subject_clean"].str.len().fillna(0).astype("Int64")
+    result["content_length"] = result["content_clean"].str.len().fillna(0).astype("Int64")
+    result["combined_text_length"] = result["combined_text"].str.len().fillna(0).astype("Int64")
     result["has_subject"] = result["subject_clean"] != ""
     result["has_redaction"] = result["subject"].map(has_redaction_marker) | result["content_markdown"].map(
         has_redaction_marker
     )
+    result["redaction_count"] = result["subject"].map(count_redaction_markers).fillna(0).astype("Int64") + result["content_markdown"].map(count_redaction_markers).fillna(0).astype("Int64")
+    result["word_count"] = result["combined_text"].str.split().str.len().fillna(0).astype("Int64")
+    
+    combined_len = result["combined_text_length"]
+    upper_count = result["combined_text"].str.count(r"[A-Z]")
+    result["uppercase_ratio"] = (upper_count / combined_len.where(combined_len > 0)).fillna(0.0)
+    
     return result
 
 
@@ -214,6 +239,8 @@ def add_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
     result["sent_year"] = result["sent_at_datetime"].dt.year.astype("Int64")
     result["sent_month"] = result["sent_at_datetime"].dt.month.astype("Int64")
     result["sent_dayofweek"] = result["sent_at_datetime"].dt.dayofweek.astype("Int64")
+    result["sent_hour"] = result["sent_at_datetime"].dt.hour.astype("Int64")
+    result["is_weekend"] = result["sent_dayofweek"].isin([5, 6])
     return result
 
 
@@ -232,12 +259,21 @@ def add_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
 
     result["has_sender"] = sender.map(lambda value: isinstance(value, str) and bool(value.strip())) if sender is not None else False
     result["has_attachments"] = attachments.fillna(0).astype("Int64") > 0 if attachments is not None else False
+    result["attachment_count"] = attachments.fillna(0).astype("Int64") if attachments is not None else 0
     result["recipient_count_estimate"] = estimate_recipient_counts(
         result.get("to_recipients"),
         result.get("cc_recipients"),
         result.get("bcc_recipients"),
         row_count=len(result),
     )
+    
+    sender_series = result.get("sender", pd.Series("", index=result.index)).fillna("").astype(str)
+    result["sender_domain"] = sender_series.str.extract(r"@([a-zA-Z0-9.-]+)", expand=False).str.lower()
+    
+    epstein_sender = result.get("epstein_is_sender", pd.Series(False, index=result.index)).fillna(False).astype(bool)
+    all_parts = result.get("all_participants", pd.Series("", index=result.index)).fillna("").astype(str).str.lower()
+    result["is_epstein_involved"] = epstein_sender | all_parts.str.contains("epstein", regex=False)
+    
     return result
 
 
