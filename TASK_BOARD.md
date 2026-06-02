@@ -10,30 +10,6 @@
 
 ## Backlog
 
-### Preparare contratto dati processed
-
-Owner: José (Codex)
-Stream: feature engineering/documentazione
-Branch proposta: `feature/processed-contracts`
-
-File scrivibili:
-
-- `DATA_CONTRACTS.md`
-
-File da leggere:
-
-- `src/utils/data_processing.py`
-- `data/metadata/jmail_processing_sample_metadata.json`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
-
-Output:
-
-- schema colonne processed;
-- path input/output;
-- regole su null e tipi.
-
-
-
 ### Valutare colonne ausiliarie per feature statistiche
 
 Owner proposto: da assegnare
@@ -133,6 +109,103 @@ Nessun task bloccato.
 
 ## Done
 
+### Validare recipient_count_estimate
+
+Owner: José (Codex)
+Stream: feature engineering/documentazione
+Branch proposta: `fix/recipient-count-estimate`
+Stato: Done
+
+Scopo:
+
+Verificare se `recipient_count_estimate` e' nullable per limiti reali dei dati raw o per un problema nella logica di parsing dei destinatari.
+
+Dipendenze:
+
+- contratto processed aggiornato;
+- sample processed disponibile.
+
+File scrivibili:
+
+- `src/utils/data_processing.py`
+- `tests/test_data_processing.py`
+- `DATA_CONTRACTS.md`
+- `src/notebooks/data_preprocessing_validation.ipynb`
+- `Diary.md`
+- `TODO.md`
+- `TASK_BOARD.md`
+
+File da leggere:
+
+- `data/processed/jmail_emails_processed_sample.parquet`
+- `data/raw/jmail_emails_sample.parquet`
+- `data/metadata/jmail_processing_sample_metadata.json`
+
+Piano:
+
+- confrontare colonne recipient raw e processed sul sample;
+- individuare formati concreti di `to_recipients`, `cc_recipients`, `bcc_recipients`;
+- leggere la funzione che produce `recipient_count_estimate`;
+- decidere se correggere il parsing o mantenere il campo nullable;
+- aggiungere test mirati se cambia logica runtime;
+- aggiornare `DATA_CONTRACTS.md` se cambia la garanzia del campo.
+
+Notebook diagnostico:
+
+- accorpato in `src/notebooks/data_preprocessing_validation.ipynb`;
+- sezione dedicata: `Diagnostica recipient_count_estimate`;
+- output generati in `reports/figures/data_preprocessing_validation/`, ignorati da Git.
+
+Output attesi:
+
+- diagnosi del motivo per cui `recipient_count_estimate` e' nullo in molte righe del sample;
+- correzione o decisione documentata se il campo deve restare nullable;
+- test unitario sui formati recipient raw supportati, se necessario;
+- contratto processed aggiornato se cambia la garanzia del campo.
+
+Handoff:
+Owner: José (Codex)
+Stream: feature engineering/documentazione
+Branch: `fix/recipient-count-estimate` proposta, lavoro attuale su branch locale corrente
+PR: da aprire
+Task: Validare recipient_count_estimate
+File modificati:
+- `src/utils/data_processing.py`
+- `tests/test_data_processing.py`
+- `DATA_CONTRACTS.md`
+- `DECISIONS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- `src/notebooks/data_preprocessing_validation.ipynb`
+- `TASK_BOARD.md`
+- `Diary.md`
+- `TODO.md`
+Test:
+- `uv run python -m pytest tests/test_data_processing.py -q` (`13 passed`)
+- `uv run python -m pytest -q` (`21 passed`)
+Output: Corretto `recipient_count_estimate` eliminando null artificiali da disallineamento indice, aggiunto `person_unknown`, gestito `Unknown` per righe senza recipient utilizzabili e rilevato `[redacted]`.
+Rischi: `recipient_count_estimate` resta una stima euristica basata sui campi recipient raw; `Unknown` indica persona non identificata/censurata, non una identita' risolta. Nel sample rigenerato `person_unknown` e' tutto `False` perche' ogni riga finale ha almeno un recipient utilizzabile; non copre recipient potenzialmente censurati dentro campi valorizzati.
+Prossimo passo: discutere se rigenerare anche il dataset full oltre al sample e se aprire PR separata per questa correzione runtime.
+
+### Preparare contratto dati processed
+
+Handoff:
+Owner: José (Codex)
+Stream: feature engineering/documentazione
+Branch: `feature/processed-contracts`
+PR: da aprire
+Task: Preparare contratto dati processed
+File modificati:
+- `DATA_CONTRACTS.md`
+- `Diary.md`
+- `TODO.md`
+- `TASK_BOARD.md`
+Test:
+- `uv run python -m pytest tests/test_data_processing.py -q` (`9 passed`)
+- `uv run python -m pytest -q` (`17 passed`)
+Output: Contratto processed aggiornato con path, formato, input richiesti, regole di trasformazione, schema colonne, nullabilita', vincoli, metadata e verifica sample.
+Rischi: `recipient_count_estimate` risulta nullable nel sample corrente; prima di usarlo come feature obbligatoria va validato o corretto.
+Prossimo passo: Avviare `Validare recipient_count_estimate` oppure chiudere PR documentale se il team vuole separare fix runtime e contratto.
+
 ### Proposta feature engineering fase 2
 
 Handoff:
@@ -149,7 +222,6 @@ Output: Feature ausiliarie proposte, approvate e registrate.
 Rischi: Durante l'implementazione andrà aggiornato DATA_CONTRACTS.md.
 Prossimo passo: Sviluppo in src/utils/data_processing.py
 
-#### 
 ### Consolidare task preprocessing
 
 Owner: José (Codex)

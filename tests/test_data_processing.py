@@ -11,6 +11,7 @@ from src.utils.data_processing import (
     build_processing_paths,
     estimate_recipient_count,
     estimate_recipient_counts,
+    fill_unknown_recipients,
     filter_promotional_emails,
     has_redaction_marker,
     normalize_text,
@@ -28,9 +29,13 @@ class DataProcessingTestCase(unittest.TestCase):
         self.assertTrue(has_redaction_marker(text))
         self.assertEqual(text, "This line contains [REDACTED] content")
 
+    def test_has_redaction_marker_detects_lowercase_bracket_marker(self) -> None:
+        self.assertTrue(has_redaction_marker("Recipient: [redacted]"))
+
     def test_count_redaction_markers_counts_correctly(self) -> None:
         from src.utils.data_processing import count_redaction_markers
         self.assertEqual(count_redaction_markers("Here is a [REDACTED] and another [SEALED]"), 2)
+        self.assertEqual(count_redaction_markers("Recipient: [redacted]"), 1)
         self.assertEqual(count_redaction_markers("Clean text"), 0)
         self.assertEqual(count_redaction_markers(None), 0)
 
@@ -46,6 +51,30 @@ class DataProcessingTestCase(unittest.TestCase):
             row_count=2,
         )
         self.assertEqual(counts.tolist(), [3, 0])
+
+    def test_estimate_recipient_counts_preserves_filtered_index(self) -> None:
+        counts = estimate_recipient_counts(
+            pd.Series(["a@example.com", "b@example.com"], index=[2, 6]),
+            pd.Series(["[]", "[]"], index=[2, 6]),
+            pd.Series([None, "[]"], index=[2, 6]),
+        )
+        self.assertEqual(counts.index.tolist(), [2, 6])
+        self.assertEqual(counts.tolist(), [1, 1])
+        self.assertFalse(counts.isna().any())
+
+    def test_fill_unknown_recipients_marks_rows_without_any_recipient(self) -> None:
+        df = pd.DataFrame(
+            {
+                "to_recipients": ["[]", "[\"a@example.com\"]"],
+                "cc_recipients": ["[]", "[]"],
+                "bcc_recipients": [None, "[]"],
+            }
+        )
+        result = fill_unknown_recipients(df)
+        self.assertEqual(result.loc[0, "to_recipients"], "Unknown")
+        self.assertTrue(result.loc[0, "person_unknown"])
+        self.assertEqual(result.loc[1, "to_recipients"], "[\"a@example.com\"]")
+        self.assertFalse(result.loc[1, "person_unknown"])
 
     def test_filter_promotional_emails_keeps_null_status(self) -> None:
         df = pd.DataFrame({"id": [1, 2, 3], "is_promotional": [True, False, None]})
@@ -91,6 +120,8 @@ class DataProcessingTestCase(unittest.TestCase):
         self.assertIn("sender_domain", processed.columns)
         self.assertIn("is_epstein_involved", processed.columns)
         self.assertIn("attachment_count", processed.columns)
+        self.assertIn("person_unknown", processed.columns)
+        self.assertFalse(processed["recipient_count_estimate"].isna().any())
         self.assertEqual(metadata["removed_promotional_rows"], 1)
 
     def test_run_processing_with_limit_rejects_invalid_negative_limit(self) -> None:

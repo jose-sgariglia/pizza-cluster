@@ -35,17 +35,34 @@ Output sample per test veloce:
    - `has_sender`
    - `has_attachments`
    - `has_redaction`
+   - `redaction_count`
+   - `word_count`
+   - `uppercase_ratio`
    - `recipient_count_estimate`
+   - `person_unknown`
    - `sent_year`
    - `sent_month`
    - `sent_dayofweek`
+   - `sent_hour`
+   - `is_weekend`
+   - `sender_domain`
+   - `is_epstein_involved`
+   - `attachment_count`
 7. Rimozione righe senza testo utilizzabile in `combined_text`.
 
 ## Policy sulle censure
 
 Le parti censurate non vengono modificate, rimosse o riscritte.
 
-La pipeline crea solo `has_redaction`, un flag euristico che segnala marker come `redacted`, `withheld`, `sealed`, blocchi `XXXX` o caratteri oscuranti. Il testo rimane preservato in `content_clean` e `combined_text`, salvo normalizzazione degli spazi.
+La pipeline crea `has_redaction`, un flag euristico che segnala marker come `[redacted]`, `redacted`, `withheld`, `sealed`, blocchi `XXXX` o caratteri oscuranti. Il testo rimane preservato in `content_clean` e `combined_text`, salvo normalizzazione degli spazi.
+
+## Policy recipient sconosciuti
+
+Quando una riga non contiene nessun destinatario utilizzabile in `to_recipients`, `cc_recipients` o `bcc_recipients`, la pipeline valorizza `to_recipients` con `Unknown` e imposta `person_unknown=True`.
+
+Questa scelta rende esplicito il caso di destinatario assente o presumibilmente censurato senza trasformare CC/BCC vuoti in falsi destinatari. `recipient_count_estimate` resta una stima quantitativa grezza: `Unknown` conta come una persona non identificata, non come identita' risolta.
+
+Nel sample processed rigenerato `person_unknown` e' sempre `False`: non significa che non esistano recipient potenzialmente censurati nel dataset completo, ma che nelle 355 righe finali del sample esiste sempre almeno un recipient utilizzabile in `to_recipients`, `cc_recipients` o `bcc_recipients`. Il rilevamento di recipient censurati dentro campi gia' valorizzati richiederebbe una feature separata, ad esempio `recipient_redacted`.
 
 ## Policy operativa preprocessing
 
@@ -70,6 +87,7 @@ Per arricchire i metadati e migliorare l'interpretabilita' dei cluster senza int
 2. **Feature Temporali:** `sent_hour` (ora di invio), `is_weekend` (flag sabato/domenica).
 3. **Feature di Network e Identita':** `sender_domain` (estrazione dominio mittente), `is_epstein_involved` (flag dedotto da sender e partecipanti).
 4. **Feature Allegati:** `attachment_count` (conteggio esatto dei file allegati).
+5. **Feature Recipient:** `person_unknown` (flag destinatario sconosciuto/censurato quando nessun recipient e' disponibile).
 
 ## Colonne escluse nella prima pipeline
 
@@ -80,7 +98,8 @@ Per arricchire i metadati e migliorare l'interpretabilita' dei cluster senza int
 ## Limiti noti
 
 - `recipient_count_estimate` e' una stima basata su split testuale semplice.
-- `has_redaction` e' euristico e va raffinato dopo revisione mirata.
+- `person_unknown` segnala assenza/censura del recipient, non identifica una persona reale.
+- `has_redaction` e' euristico e puo' richiedere nuove condizioni se emergono marker non ancora coperti.
 - La pipeline non rimuove ancora firme, forward header o boilerplate email.
 - La pipeline non normalizza ancora entita', nomi o indirizzi email.
 - La pipeline non rimuove stop words da `combined_text` per scelta metodologica approvata.
@@ -105,8 +124,11 @@ Risultati della validazione corrente con `PROCESSING_SAMPLE_SIZE=1000`:
 - output: 355 righe
 - record promozionali rimossi: 645
 - righe senza testo rimosse: 0
-- colonne output: 31
+- colonne output: 40
 - righe con `has_redaction == True`: 6
+- righe con `recipient_count_estimate` nullo: 0
+- righe con `person_unknown == True`: 0
+- motivo: ogni riga finale del sample ha almeno un recipient utilizzabile; `person_unknown` non misura recipient censurati dentro campi valorizzati.
 
 Questa validazione non sostituisce l'esecuzione completa sul dataset intero.
 
