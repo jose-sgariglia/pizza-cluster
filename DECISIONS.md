@@ -163,3 +163,57 @@ Approvazione:
 
 - Approvata dall'utente il 2026-05-28.
 
+## 2026-06-01 - Gestione recipient sconosciuti e marker [redacted]
+
+Stato: Approved
+
+Contesto:
+
+Durante la validazione di `recipient_count_estimate`, il notebook di preprocessing ha mostrato valori nulli nella feature e destinatari raw presenti in formati JSON-like. L'utente ha inoltre rilevato che in email come `EFTA00552880` alcune redazioni compaiono come `[redacted]`.
+
+Decisione:
+
+- Correggere il calcolo di `recipient_count_estimate` per preservare l'indice dopo i filtri e non produrre null artificiali.
+- Se una riga non contiene nessun destinatario utilizzabile in `to_recipients`, `cc_recipients` o `bcc_recipients`, impostare `to_recipients` a `Unknown`.
+- Aggiungere `person_unknown` per tracciare le righe in cui il destinatario e' sconosciuto/censurato.
+- Rilevare esplicitamente `[redacted]` come marker di redazione.
+- Chiarire che `person_unknown` non identifica recipient potenzialmente censurati dentro campi recipient gia' valorizzati; per quel caso servirebbe una feature distinta.
+
+Alternative considerate:
+
+- Lasciare `recipient_count_estimate` nullable e documentare solo il limite.
+- Sostituire ogni campo recipient vuoto con `Unknown`, incluso CC/BCC.
+- Non aggiungere una feature dedicata per recipient sconosciuti.
+
+Pro:
+
+- Rende `recipient_count_estimate` utilizzabile senza null artificiali.
+- Mantiene separata l'informazione di persona sconosciuta tramite `person_unknown`.
+- Evita di trasformare CC/BCC vuoti in falsi unknown.
+- Migliora la copertura del rilevamento redazioni.
+
+Contro:
+
+- `recipient_count_estimate` resta una stima euristica, non un conteggio anagrafico certificato.
+- `Unknown` rappresenta informazione assente/censurata, non una persona identificabile.
+- Nel sample corrente `person_unknown` puo' risultare tutto `False` se ogni riga ha almeno un recipient utilizzabile.
+
+Impatto:
+
+- Cambia schema processed aggiungendo `person_unknown`.
+- Aggiorna la garanzia di `recipient_count_estimate`: non nullo nelle righe finali.
+- Richiede rigenerazione degli artefatti processed.
+- Aggiorna test, notebook preprocessing e `DATA_CONTRACTS.md`.
+
+File o artefatti coinvolti:
+
+- `src/utils/data_processing.py`
+- `tests/test_data_processing.py`
+- `src/notebooks/data_preprocessing_validation.ipynb`
+- `DATA_CONTRACTS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-01 dopo revisione del notebook diagnostico.
+

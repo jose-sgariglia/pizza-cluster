@@ -49,6 +49,7 @@ REDACTION_PATTERNS = (
     re.compile(r"\bredacted\b", re.IGNORECASE),
     re.compile(r"\bwithheld\b", re.IGNORECASE),
     re.compile(r"\bsealed\b", re.IGNORECASE),
+    re.compile(r"\[\s*redacted\s*\]", re.IGNORECASE),
     re.compile(r"\[+\s*(?:redacted|withheld|sealed)\s*\]+", re.IGNORECASE),
     re.compile(r"\bX{4,}\b", re.IGNORECASE),
     re.compile(r"[█■]{2,}"),
@@ -156,6 +157,32 @@ def estimate_recipient_count(*values: Any) -> int:
     return len(recipients)
 
 
+def _recipient_field_has_known_value(series: pd.Series) -> pd.Series:
+    normalized = series.fillna("").astype(str).str.strip()
+    return ~normalized.isin(["", "[]", "Unknown"])
+
+
+def fill_unknown_recipients(df: pd.DataFrame) -> pd.DataFrame:
+    """Mark rows where all recipient fields are missing or empty.
+
+    The raw recipient columns are otherwise preserved. When no recipient is available in
+    any field, `to_recipients` is set to `Unknown` as the least ambiguous placeholder.
+    """
+
+    result = df.copy()
+    recipient_columns = ["to_recipients", "cc_recipients", "bcc_recipients"]
+    known_recipient = pd.Series(False, index=result.index)
+
+    for column in recipient_columns:
+        if column not in result.columns:
+            result[column] = ""
+        known_recipient = known_recipient | _recipient_field_has_known_value(result[column])
+
+    result["person_unknown"] = ~known_recipient
+    result.loc[result["person_unknown"], "to_recipients"] = "Unknown"
+    return result
+
+
 def select_supported_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Select the first-pipeline columns available in the raw dataset.
 
@@ -260,11 +287,11 @@ def add_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     result["has_sender"] = sender.map(lambda value: isinstance(value, str) and bool(value.strip())) if sender is not None else False
     result["has_attachments"] = attachments.fillna(0).astype("Int64") > 0 if attachments is not None else False
     result["attachment_count"] = attachments.fillna(0).astype("Int64") if attachments is not None else 0
+    result = fill_unknown_recipients(result)
     result["recipient_count_estimate"] = estimate_recipient_counts(
         result.get("to_recipients"),
         result.get("cc_recipients"),
         result.get("bcc_recipients"),
-        row_count=len(result),
     )
     
     sender_series = result.get("sender", pd.Series("", index=result.index)).fillna("").astype(str)
@@ -281,22 +308,29 @@ def estimate_recipient_counts(
     to_recipients: pd.Series | None,
     cc_recipients: pd.Series | None,
     bcc_recipients: pd.Series | None,
-    row_count: int,
+    row_count: int | None = None,
 ) -> pd.Series:
     """Estimate recipient counts with vectorized string operations.
 
     Example:
         ```python
-        counts = estimate_recipient_counts(df["to_recipients"], df["cc_recipients"], None, len(df))
+        counts = estimate_recipient_counts(df["to_recipients"], df["cc_recipients"], None)
         ```
     """
 
-    counts = pd.Series(0, index=range(row_count), dtype="Int64")
+    series_values = [series for series in (to_recipients, cc_recipients, bcc_recipients) if series is not None]
+    if series_values:
+        index = series_values[0].index
+    else:
+        index = range(row_count or 0)
+
+    counts = pd.Series(0, index=index, dtype="Int64")
     for series in (to_recipients, cc_recipients, bcc_recipients):
         if series is None:
             continue
+        series = series.reindex(index)
         normalized = series.fillna("").astype(str).str.strip()
-        non_empty = normalized != ""
+        non_empty = ~normalized.isin(["", "[]"])
         separators = normalized.str.count(r"[,;\n]+")
         counts = counts + non_empty.astype("Int64") + separators.where(non_empty, 0).astype("Int64")
     return counts
@@ -344,7 +378,8 @@ def process_emails(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         "removed_promotional_rows": selected_rows - after_promotional_filter,
         "removed_empty_text_rows": after_promotional_filter - len(processed),
         "output_columns": list(processed.columns),
-        "redaction_policy": "Redaction markers are detected in has_redaction but text spans are preserved.",
+        "redaction_policy": "Redaction markers including [redacted] are detected in has_redaction but text spans are preserved.",
+        "recipient_unknown_policy": "Rows without usable recipient fields are marked with person_unknown and to_recipients=Unknown.",
     }
     return processed, metadata
 
