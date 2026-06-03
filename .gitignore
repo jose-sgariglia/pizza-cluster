@@ -221,7 +221,7 @@ reports/figures/*
 !data/metadata/.gitkeep
 
 # Local developer/assistant notes
-Diary.md
+DIARY.md
 TODO.md
 !models/trained/.gitkeep
 !models/checkpoints/.gitkeep
