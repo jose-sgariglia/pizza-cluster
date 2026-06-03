@@ -216,3 +216,33 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-06-01 dopo revisione del notebook diagnostico.
+
+## 2026-06-03 - Grafici robusti nei notebook diagnostici
+
+Stato: Approved
+
+Contesto:
+Durante la generazione di embeddings multi-modello, l'istogramma delle norme L2 nel notebook `embedding_process.ipynb` ha generato un `ValueError` in quanto le norme erano tutte identiche (1.0) a causa della normalizzazione L2, rendendo impossibile la creazione di 30 bin finiti.
+
+Decisione:
+Implementare una logica di plotting robusta che verifichi se il range dei dati è nullo prima di definire il numero di bin. In caso di dati costanti, usare 1 solo bin.
+
+Alternative considerate:
+- Rimuovere il grafico delle norme.
+- Disabilitare la normalizzazione (scartata per coerenza pipeline).
+
+Pro:
+- Evita crash del notebook.
+- Gestisce correttamente embeddings normalizzati.
+
+Contro:
+- Aggiunge logica condizionale nel notebook.
+
+Impatto:
+- Modifica a `src/notebooks/embedding_process.ipynb`.
+
+File o artefatti coinvolti:
+- `src/notebooks/embedding_process.ipynb`
+
+Approvazione:
+- Approvata dall'utente il 2026-06-03.
