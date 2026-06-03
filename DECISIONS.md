@@ -162,3 +162,4 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-05-28.
+

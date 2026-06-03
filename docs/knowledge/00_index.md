@@ -28,4 +28,5 @@
 - [Dataset understanding](02_dataset_understanding.md)
 - [Cleaning and feature engineering](03_cleaning_feature_engineering.md)
 - [Embedding strategy memo](04_embedding_strategy_memo.md)
+- [Embedding evaluation and clustering](05_embedding_evaluation_and_clustering.md)
 - [Agent workflow](agent_workflow.md)
