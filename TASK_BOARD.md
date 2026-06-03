@@ -57,26 +57,6 @@ Output:
 - rischi informativi;
 - raccomandazione prima di eventuali modifiche runtime.
 
-### Consolidare embeddings baseline
-
-Owner proposto: José (Codex)
-Stream: embeddings/studio/analisi
-Branch proposta: `feature/embeddings-baseline`
-
-File scrivibili:
-
-- `src/utils/embedding_pipeline.py`
-- `tests/test_embedding_pipeline.py`
-- `docs/knowledge/04_embedding_strategy_memo.md`
-- `docs/embedding_research/`
-
-Output:
-
-- baseline embeddings riproducibile;
-- parametri documentati;
-- test verdi;
-- note su come rigenerare embeddings dopo feature engineering.
-
 ### Ricongiungere embeddings e feature engineering
 
 Owner: da assegnare dopo merge stream A e B
@@ -108,6 +88,34 @@ Nessun task in corso.
 Nessun task bloccato.
 
 ## Done
+
+### Consolidare embeddings baseline
+
+Owner: José (Codex)
+Stream: embeddings/studio/analisi
+Branch: `feature/embeddings-baseline`
+Stato: Done
+
+Scopo:
+Generare embeddings per tre modelli diversi (`bge-small-en-v1.5`, `all-MiniLM-L6-v2`, `e5-base-v2`) e validare il processo tramite notebook diagnostico.
+
+Handoff:
+Owner: José (Codex)
+Stream: embeddings/studio/analisi
+Branch: `feature/embeddings-baseline`
+Task: Consolidare embeddings baseline
+File modificati:
+- `src/notebooks/embedding_process.ipynb`
+Test:
+- Esecuzione notebook (verifica visiva dei grafici diagnostici).
+- Verifica artefatti in `data/embeddings/` e `data/metadata/`.
+Output:
+- Artefatti embedding per i 3 modelli generati e salvati.
+- Notebook diagnostico corretto per gestire norme L2 costanti (1.0).
+Rischi:
+- Nessuno rilevato; la normalizzazione è garantita dalla pipeline.
+Prossimo passo:
+- Avviare analisi comparativa embeddings o procedere al clustering.
 
 ### Validare recipient_count_estimate
 
