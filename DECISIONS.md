@@ -246,3 +246,45 @@ File o artefatti coinvolti:
 
 Approvazione:
 - Approvata dall'utente il 2026-06-03.
+
+## 2026-06-04 - Selezione di bge-small-en-v1.5 come modello di embedding ufficiale
+
+Stato: Approved
+
+Contesto:
+
+Durante la fase di confronto multi-modello in `embedding_model_comparison.ipynb`, sono stati valutati `all-MiniLM-L6-v2` (384d), `BAAI/bge-small-en-v1.5` (384d) e `intfloat/e5-base-v2` (768d) sull'intero dataset di ~42.000 email tramite K-Means.
+
+Decisione:
+
+Selezionare `BAAI/bge-small-en-v1.5` come modello principale di embedding per il progetto.
+
+Alternative considerate:
+
+- `all-MiniLM-L6-v2`: Scartato per alta instabilità dei cluster (Silhouette picco a K=3 con estrema varianza ARI/NMI in bootstrap).
+- `intfloat/e5-base-v2`: Scartato nonostante l'alta stabilità perché, a parità di risoluzione ottimale (K=15), ha ottenuto un Silhouette Score leggermente inferiore rispetto a BGE e richiede il doppio delle dimensioni (768 vs 384), incrementando notevolmente i costi computazionali.
+
+Pro:
+
+- Ottima stabilità dei cluster (bassa deviazione standard per ARI e NMI in bootstrap).
+- Miglior Silhouette Score a parità di risoluzione K=15.
+- Efficienza computazionale (384 dimensioni), che ottimizza tempi di elaborazione e storage su disco.
+
+Contro:
+
+- Rischio teorico di perdere marginalmente sfumature semantiche in task di Information Retrieval estremamente complessi rispetto a modelli "base".
+
+Impatto:
+
+- `BAAI/bge-small-en-v1.5` verrà utilizzato come standard per le prossime fasi della pipeline.
+- Nuova documentazione aggiunta al progetto in docs/knowledge.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/embedding_model_comparison.ipynb`
+- `TASK_BOARD.md`
+- `docs/knowledge/06_embedding_resolution_and_k_selection.md`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-04.
