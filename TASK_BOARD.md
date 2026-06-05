@@ -77,17 +77,50 @@ Output:
 
 ## Ready
 
-Nessun task assegnato.
+Nessun task assegnato in Ready.
 
 ## In Progress
 
-Nessun task in corso.
+Nessun task assegnato in In Progress.
 
 ## Blocked
 
 Nessun task bloccato.
 
 ## Done
+
+### Sperimentare clustering UMAP + HDBSCAN e Grid Search
+
+Owner: Filippo (Antigravity)
+Stream: clustering
+Branch: `feature/clustering-hdbscan`
+Stato: Done
+
+Scopo:
+Risolvere il blocco computazionale dell'approccio diretto sviluppando una pipeline UMAP (15D, cosine) + HDBSCAN (euclidean) e trovare i parametri ottimali tramite Grid Search.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: clustering
+Branch: `feature/clustering-hdbscan`
+Task: Sperimentare clustering UMAP + HDBSCAN e Grid Search
+File modificati:
+- `src/utils/clustering_hdbscan.py`
+- `src/notebooks/clustering_umap_hdbscan.ipynb`
+- `src/notebooks/clustering_hdbscan_experiment.ipynb`
+- `DECISIONS.md`
+- `TASK_BOARD.md`
+Test:
+- Esecuzione notebook pipeline completata con successo in pochi secondi.
+- Grid Search completata.
+Output:
+- Utility per pipeline UMAP + HDBSCAN creata.
+- Notebook di grid search configurato.
+- Parametri finali scelti (Configurazione 9): `min_cluster_size=200`, `min_samples=10`.
+Rischi:
+- Nessuno, la pipeline ridotta è performante.
+Prossimo passo:
+- Analisi qualitativa ed estrazione semantica dei cluster individuati.
 
 ### Consolidare embeddings baseline
 
