@@ -288,3 +288,38 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-06-04.
+
+## 2026-06-05 - Pipeline UMAP + HDBSCAN e Grid Search
+
+Stato: Approved
+
+Contesto:
+
+L'applicazione diretta di HDBSCAN su 42.000 embeddings a 384 dimensioni richiedeva tempi di esecuzione inaccettabili (oltre 10 minuti per run), rendendo impraticabile il tuning dei parametri e l'esplorazione del modello.
+
+Decisione:
+
+1. Reintegrare UMAP per ridurre la dimensionalità a 15 (utilizzando metrica `cosine` per preservare la topologia originale).
+2. Eseguire una Grid Search sistematica per ottimizzare i parametri di HDBSCAN sui vettori ridotti.
+3. Parametri finali scelti tramite Grid Search (Scelta 9): `min_cluster_size` = 200, `min_samples` = 10.
+   Questa configurazione bilancia i macro-cluster (40 identificati) con un tasso di rumore accettabile per l'information retrieval (41.11%).
+
+Alternative considerate:
+
+- HDBSCAN diretto (euclidean): Scartato per i colli di bottiglia computazionali eccessivi.
+
+Impatto:
+
+- Pipeline ottimizzata che gira in pochi secondi.
+- `src/utils/clustering_hdbscan.py` aggiornato per includere la logica UMAP.
+- Nuovo notebook `src/notebooks/clustering_hdbscan_experiment.ipynb` creato per la Grid Search automatizzata.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/clustering_hdbscan_experiment.ipynb`
+- `src/notebooks/clustering_umap_hdbscan.ipynb`
+- `src/utils/clustering_hdbscan.py`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-05.
