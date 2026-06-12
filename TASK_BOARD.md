@@ -81,7 +81,26 @@ Nessun task assegnato in Ready.
 
 ## In Progress
 
-Nessun task assegnato in In Progress.
+### Sperimentazione e Implementazione Topic Labeling
+
+Owner: Gemini (AI Agent)
+Stream: Topic Modeling
+Branch: `feature/topic-labeling`
+Stato: In Progress
+
+Scopo:
+Interpretazione semantica dei cluster tramite Topic Labeling, confrontando diversi approcci (YAKE, TextRank, c-TF-IDF, KeyBERT, LLM) per estrarre keyword e nomi di cluster significativi.
+
+File scrivibili:
+- `src/utils/topic_labeling.py`
+- `src/notebooks/cluster_labeling_experiment.ipynb`
+- `DECISIONS.md`
+- `docs/knowledge/08_topic_labeling.md`
+
+Output attesi:
+- Utility script con algoritmi di keyword extraction.
+- Notebook di confronto qualitativo.
+- Documentazione tecnica e decisione finale.
 
 ## Blocked
 
@@ -89,7 +108,7 @@ Nessun task bloccato.
 
 ## Done
 
-### Sperimentare clustering UMAP + HDBSCAN e Grid Search
+### Sperimentante clustering UMAP + HDBSCAN e Grid Search
 
 Owner: Filippo (Antigravity)
 Stream: clustering
