@@ -57,6 +57,32 @@ Output:
 - rischi informativi;
 - raccomandazione prima di eventuali modifiche runtime.
 
+### Implementazione Entity Normalization
+
+Owner proposto: da assegnare
+Stream: feature engineering / NLP
+Branch proposta: `feature/entity-normalization`
+
+Scopo:
+Sviluppare una utility per normalizzare i nomi di persone e organizzazioni (es. "Barack Obama" vs "President Obama") per migliorare la densità semantica del clustering e del labeling.
+
+Output:
+- Modulo di Entity Resolution.
+- Lookup table o logica basata su NER.
+
+### Implementazione Pulizia Boilerplate e POS Filtering
+
+Owner proposto: da assegnare
+Stream: Preprocessing
+Branch proposta: `feature/advanced-cleaning`
+
+Scopo:
+Rimuovere il rumore dalle email (header, firme) e implementare filtri grammaticali (solo Sostantivi) per l'estrazione delle keyword, migliorando l'interpretabilità dei cluster.
+
+Output:
+- Funzioni di pulizia regex.
+- Pipeline di filtraggio POS via Spacy.
+
 ### Ricongiungere embeddings e feature engineering
 
 Owner: da assegnare dopo merge stream A e B
