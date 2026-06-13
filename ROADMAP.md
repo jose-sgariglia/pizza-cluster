@@ -125,6 +125,24 @@ Output:
 - Esempi email per cluster.
 - Documentazione metodologica.
 
+### Fase 4.1 - Ottimizzazione Cluster e Labeling (New)
+
+Obiettivo: Migliorare la qualità e l'interpretabilità dei cluster risolvendo il problema dei risultati "generici".
+
+Azioni previste:
+
+- **Entity Normalization (Entity Linking):** Sostituire varianti dello stesso nome (es. "Barack Obama", "President Obama") con una forma canonica per concentrare il peso semantico.
+- **Pulizia Boilerplate Avanzata:** Rimozione sistematica di header email ricorrenti, firme e disclaimer legali tramite regex mirate.
+- **POS Filtering per Labeling:** Utilizzare solo Sostantivi e Nomi Propri per il calcolo del c-TF-IDF per ridurre il rumore semantico.
+- **LLM-based Cluster Naming:** Utilizzare modelli linguistici (GPT/Claude) per generare titoli descrittivi partendo dai documenti più rappresentativi di ogni cluster.
+- **MMR (Maximal Marginal Relevance) per Keywords:** Filtrare parole chiave eccessivamente comuni in tutti i cluster per far emergere la specificità locale.
+
+Output:
+
+- Pipeline di normalizzazione entità.
+- Modulo di pulizia boilerplate.
+- Report cluster ottimizzato con nomi leggibili.
+
 ### Fase 5 - API Modello
 
 Obiettivo: esporre cluster, email e metadata tramite API.
