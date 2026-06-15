@@ -57,6 +57,32 @@ Output:
 - rischi informativi;
 - raccomandazione prima di eventuali modifiche runtime.
 
+### Implementazione Entity Normalization
+
+Owner proposto: da assegnare
+Stream: feature engineering / NLP
+Branch proposta: `feature/entity-normalization`
+
+Scopo:
+Sviluppare una utility per normalizzare i nomi di persone e organizzazioni (es. "Barack Obama" vs "President Obama") per migliorare la densità semantica del clustering e del labeling.
+
+Output:
+- Modulo di Entity Resolution.
+- Lookup table o logica basata su NER.
+
+### Implementazione Pulizia Boilerplate e POS Filtering
+
+Owner proposto: da assegnare
+Stream: Preprocessing
+Branch proposta: `feature/advanced-cleaning`
+
+Scopo:
+Rimuovere il rumore dalle email (header, firme) e implementare filtri grammaticali (solo Sostantivi) per l'estrazione delle keyword, migliorando l'interpretabilità dei cluster.
+
+Output:
+- Funzioni di pulizia regex.
+- Pipeline di filtraggio POS via Spacy.
+
 ### Ricongiungere embeddings e feature engineering
 
 Owner: da assegnare dopo merge stream A e B
@@ -81,7 +107,26 @@ Nessun task assegnato in Ready.
 
 ## In Progress
 
-Nessun task assegnato in In Progress.
+### Sperimentazione e Implementazione Topic Labeling
+
+Owner: Gemini (AI Agent)
+Stream: Topic Modeling
+Branch: `feature/topic-labeling`
+Stato: In Progress
+
+Scopo:
+Interpretazione semantica dei cluster tramite Topic Labeling, confrontando diversi approcci (YAKE, TextRank, c-TF-IDF, KeyBERT, LLM) per estrarre keyword e nomi di cluster significativi.
+
+File scrivibili:
+- `src/utils/topic_labeling.py`
+- `src/notebooks/cluster_labeling_experiment.ipynb`
+- `DECISIONS.md`
+- `docs/knowledge/08_topic_labeling.md`
+
+Output attesi:
+- Utility script con algoritmi di keyword extraction.
+- Notebook di confronto qualitativo.
+- Documentazione tecnica e decisione finale.
 
 ## Blocked
 
@@ -89,7 +134,7 @@ Nessun task bloccato.
 
 ## Done
 
-### Sperimentare clustering UMAP + HDBSCAN e Grid Search
+### Sperimentante clustering UMAP + HDBSCAN e Grid Search
 
 Owner: Filippo (Antigravity)
 Stream: clustering
