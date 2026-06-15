@@ -10,6 +10,27 @@
 
 ## Backlog
 
+### LLM-Naming per riassumere i cluster
+
+Owner proposto: Filippo
+Stream: Labelling Topic
+Branch proposta: `feature/llm-naming`
+
+Dipendenze:
+- Baseline per la creazione dei topic labeling con gli algoritmi c-TF-IDF, YAKE, TextRank e Bert similarity
+
+File scrivibili:
+- `DATA_CONTRACTS.md`
+- `docs/knowledge/09_llm_naming_cluster.md`
+- Modulo per integrazione LLM
+- File `src/notebooks/cluster_labelling_experiment.ipynb` aumentando a 20 migliori
+
+Output:
+- Prendere i primi 20 label di un cluster, passarli ad un LLM per creare un unico label di una parola/due parole che racchiuda tutto il cluster
+- file in `src/utils` con il codice per il naming dei cluster
+- `src/notebooks` per l'utilizzo delle funzionalità in `src/utils`
+- Mostrare il risultato
+
 ### Valutare colonne ausiliarie per feature statistiche
 
 Owner proposto: da assegnare
