@@ -10,26 +10,6 @@
 
 ## Backlog
 
-### LLM-Naming per riassumere i cluster
-
-Owner proposto: Filippo
-Stream: Labelling Topic
-Branch proposta: `feature/llm-naming`
-
-Dipendenze:
-- Baseline per la creazione dei topic labeling con gli algoritmi c-TF-IDF, YAKE, TextRank e Bert similarity
-
-File scrivibili:
-- `DATA_CONTRACTS.md`
-- `docs/knowledge/09_llm_naming_cluster.md`
-- Modulo per integrazione LLM
-- File `src/notebooks/cluster_labelling_experiment.ipynb` aumentando a 20 migliori
-
-Output:
-- Prendere i primi 20 label di un cluster, passarli ad un LLM per creare un unico label di una parola/due parole che racchiuda tutto il cluster
-- file in `src/utils` con il codice per il naming dei cluster
-- `src/notebooks` per l'utilizzo delle funzionalità in `src/utils`
-- Mostrare il risultato
 
 ### Valutare colonne ausiliarie per feature statistiche
 
@@ -154,6 +134,34 @@ Output attesi:
 Nessun task bloccato.
 
 ## Done
+
+### LLM-Naming per riassumere i cluster
+
+Owner: Filippo (Antigravity)
+Stream: Labelling Topic
+Branch: `feature/llm-naming`
+Stato: Done
+
+Scopo:
+Sviluppare un'utility per l'assegnazione automatica di un nome (1-3 parole massime) ai cluster partendo dalle keyword estratte, interfacciandosi con un modello LLM locale tramite Ollama.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: Labelling Topic
+Branch: `feature/llm-naming`
+Task: LLM-Naming per riassumere i cluster
+File modificati:
+- `src/utils/llm_naming.py`
+- `TASK_BOARD.md`
+Test:
+- Esecuzione `uv run python src/utils/llm_naming.py` andata a buon fine.
+- Risolto blocco di Ollama (generation loop) causato dall'uso dell'endpoint `/api/generate` passando a `/api/chat` e implementando un **Few-Shot Prompt** con temperatura 0.0 per garantire risposte formattate esattamente come richiesto.
+Output:
+- Modulo `get_llm_cluster_name` funzionante e validato in locale con modello `llama3`.
+Rischi:
+- La latenza dell'LLM può rallentare l'elaborazione per i 40 cluster, ma l'impostazione Few-Shot minimizza i tempi di inferenza.
+Prossimo passo:
+- Eseguire il processo massivamente nel notebook `cluster_labeling_experiment.ipynb` su tutti i cluster individuati.
 
 ### Sperimentante clustering UMAP + HDBSCAN e Grid Search
 

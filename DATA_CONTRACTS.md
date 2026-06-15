@@ -306,3 +306,21 @@ Decisioni mancanti:
 - formato risposta;
 - paginazione;
 - campi esposti per email redatte o sensibili.
+
+## Topic Labeling Metadata
+
+Stato: Proposed
+
+Path proposto:
+- `data/metadata/cluster_labeling_metadata.json`
+
+Formato proposto:
+- JSON
+
+Schema atteso (per ogni cluster):
+- `ctfidf`: Array di stringhe (keyword)
+- `yake`: Array di stringhe (keyword)
+- `textrank`: Array di stringhe (keyword)
+- `keybert_sim`: Array di stringhe (keyword)
+- `llm_summary`: Stringa (Nome breve descrittivo generato da LLM locale)
+
