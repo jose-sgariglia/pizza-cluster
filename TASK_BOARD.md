@@ -135,6 +135,31 @@ Nessun task bloccato.
 
 ## Done
 
+### Creazione Notebook Orchestratore Pipeline Completa
+
+Owner: Filippo (Antigravity)
+Stream: Integrazione
+Branch: `feature/full-pipeline-notebook`
+Stato: Done
+
+Scopo:
+Creare un notebook centralizzato (`full_pipeline_orchestration.ipynb`) che orchestri l'intera pipeline di lavoro, dall'estrazione del dataset fino al preprocessing, embeddings, clustering UMAP+HDBSCAN e assegnazione dei nomi tramite LLM, riutilizzando esclusivamente i moduli validati presenti in `src/utils/`.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: Integrazione
+Branch: `feature/full-pipeline-notebook`
+Task: Creazione Notebook Orchestratore Pipeline Completa
+File creati/modificati:
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+- `TASK_BOARD.md`
+Test:
+- Validato sintatticamente l'IPYNB generato tramite esecuzione di Python nbformat.
+Output:
+- Nuovo notebook `full_pipeline_orchestration.ipynb` disponibile.
+Rischi:
+- Nessuno, il notebook prevede la possibilità di lavorare su limit_rows per il preprocessing per evitare sovraccarichi hardware.
+
 ### LLM-Naming per riassumere i cluster
 
 Owner: Filippo (Antigravity)
