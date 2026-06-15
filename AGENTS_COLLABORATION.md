@@ -17,53 +17,15 @@ Questo file integra `AGENT.md`. In caso di conflitto, `AGENT.md` ha priorita'.
 - Ogni modifica significativa deve lasciare traccia in documentazione, test o diario.
 - L'ambiente Python di riferimento e' `uv`.
 
-## Stream Di Lavoro
+## Flusso di Lavoro
 
-### Stream A - Embeddings, Studio, Analisi
+Il flusso di lavoro è determinato dal file `TASK_BOARD.md` o dalla volontà dello sviluppatore.
+La volontà dello sviluppatore è priorità sulle task.
 
-Owner proposto: sviluppatore con Codex.
-
-Responsabilita':
-
-- ricerca modelli embedding;
-- pipeline embeddings;
-- generazione baseline;
-- confronto embeddings prima/dopo feature engineering;
-- studio metriche sugli embeddings;
-- documentazione tecnica su modelli e parametri.
-
-Branch consigliate:
-
-- `feature/embeddings-baseline`
-- `feature/embedding-analysis`
-
-### Stream B - Feature Engineering, Estrazione Feature, Documentazione
-
-Owner proposto: sviluppatore con Antigravity.
-
-Responsabilita':
-
-- miglioramento preprocessing;
-- feature engineering testuale e metadata;
-- estrazione feature interpretabili;
-- documentazione contenutistica;
-- aggiornamento contratti dati processed/features.
-
-Branch consigliate:
-
-- `feature/feature-engineering`
-- `feature/processed-contracts`
-
-### Stream C - Integrazione Clustering
-
-Owner: da assegnare dopo ricongiungimento degli stream A e B.
-
-Responsabilita':
-
-- usare embeddings e feature stabili;
-- confrontare clustering su baseline e dati arricchiti;
-- produrre metriche e report;
-- proporre modello candidato.
+Ogni task dev'essere eseguita con:
+1. Lettura della task
+2. Proposta della soluzione
+3. Seguire le linee guida
 
 ## File Ownership
 
