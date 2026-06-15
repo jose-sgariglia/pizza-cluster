@@ -10,6 +10,7 @@
 
 ## Backlog
 
+
 ### Valutare colonne ausiliarie per feature statistiche
 
 Owner proposto: da assegnare
@@ -133,6 +134,34 @@ Output attesi:
 Nessun task bloccato.
 
 ## Done
+
+### LLM-Naming per riassumere i cluster
+
+Owner: Filippo (Antigravity)
+Stream: Labelling Topic
+Branch: `feature/llm-naming`
+Stato: Done
+
+Scopo:
+Sviluppare un'utility per l'assegnazione automatica di un nome (1-3 parole massime) ai cluster partendo dalle keyword estratte, interfacciandosi con un modello LLM locale tramite Ollama.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: Labelling Topic
+Branch: `feature/llm-naming`
+Task: LLM-Naming per riassumere i cluster
+File modificati:
+- `src/utils/llm_naming.py`
+- `TASK_BOARD.md`
+Test:
+- Esecuzione `uv run python src/utils/llm_naming.py` andata a buon fine.
+- Risolto blocco di Ollama (generation loop) causato dall'uso dell'endpoint `/api/generate` passando a `/api/chat` e implementando un **Few-Shot Prompt** con temperatura 0.0 per garantire risposte formattate esattamente come richiesto.
+Output:
+- Modulo `get_llm_cluster_name` funzionante e validato in locale con modello `llama3`.
+Rischi:
+- La latenza dell'LLM può rallentare l'elaborazione per i 40 cluster, ma l'impostazione Few-Shot minimizza i tempi di inferenza.
+Prossimo passo:
+- Eseguire il processo massivamente nel notebook `cluster_labeling_experiment.ipynb` su tutti i cluster individuati.
 
 ### Sperimentante clustering UMAP + HDBSCAN e Grid Search
 
