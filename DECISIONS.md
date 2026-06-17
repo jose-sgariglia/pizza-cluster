@@ -86,7 +86,7 @@ Non rimuovere stop words da `combined_text` usato per sentence embeddings. Event
 Alternative considerate:
 
 - Rimuovere stop words direttamente da `combined_text`.
-- Normalizzare subito email, nomi, forward headers e boilerplate dentro `combined_text`.
+- Normalizzare subito email, nomi, forward headers e boilerplate email dentro `combined_text`.
 - Creare un secondo campo testuale per feature statistiche.
 - Mantenere solo la pipeline corrente senza decisione esplicita.
 
@@ -323,3 +323,44 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-06-05.
+
+## 2026-06-17 - Esportazione Dataset Etichettato (Clustered Emails)
+
+Stato: Approved
+
+Contesto:
+
+L'utente ha richiesto la creazione di un file `.parquet` alla fine della pipeline che contenga tutti i dati etichettati con il cluster di appartenenza e il nome del cluster generato dall'LLM.
+
+Decisione:
+
+Standardizzare l'output finale della pipeline di orchestrazione nel file `data/processed/jmail_emails_clustered.parquet`. Questo file includerà tutte le colonne del dataset processato più le label del clustering e i nomi descrittivi.
+
+Alternative considerate:
+
+- Salvare solo una mappatura ID -> Cluster (scartato per scomodità d'uso downstream).
+- Usare CSV (scartato per perdita di tipi e inefficienza).
+
+Pro:
+
+- Dataset "chiavi in mano" per visualizzazioni e API.
+- Preservazione dei nomi generati dall'LLM direttamente nel dato.
+- Facile integrazione con strumenti di BI o altri notebook.
+
+Contro:
+
+- Duplicazione parziale dei dati (il file clustered è una copia del processed con colonne extra).
+
+Impatto:
+
+- Aggiornamento di `src/notebooks/full_pipeline_orchestration.ipynb`.
+- Aggiornamento di `DATA_CONTRACTS.md`.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+- `data/processed/jmail_emails_clustered.parquet`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-17.

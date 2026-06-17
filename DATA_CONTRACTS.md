@@ -252,35 +252,41 @@ Vincoli:
 - Embeddings normalizzati L2 dopo aggregazione chunk.
 - Index deve mantenere allineamento tra email e chunk.
 
-## Cluster Assignments
+## Clustered Emails
 
-Stato: Proposed
+Stato: Approved
 
-Path proposto:
+Path:
 
-- `data/processed/email_cluster_assignments.parquet`
-- `data/metadata/clustering_metadata.json`
+- full: `data/processed/jmail_emails_clustered.parquet`
+- sample: `data/processed/jmail_emails_clustered_sample.parquet`
 
-Formato proposto:
+Formato:
 
-- Parquet per assegnazioni.
-- JSON per metadata e parametri.
+- Parquet
 
-Colonne candidate:
+Prodotto da:
 
-- `id`
-- `cluster_id`
-- `cluster_label`
-- `is_outlier`
-- `distance_to_representative`
-- `model_version`
+- `src/notebooks/full_pipeline_orchestration.ipynb` (Orchestrator)
 
-Decisioni mancanti:
+Input:
 
-- algoritmo clustering;
-- metriche;
-- gestione outlier;
-- strategia naming cluster.
+- Processed emails;
+- Cluster labels e probability (da HDBSCAN);
+- Cluster names (da LLM Naming).
+
+Colonne aggiunte rispetto a Processed:
+
+| Colonna | Tipo atteso | Null | Note |
+| --- | --- | --- | --- |
+| `cluster` | integer | no | ID del cluster assegnato da HDBSCAN; -1 per outlier. |
+| `cluster_prob` | float | no | Probabilità di appartenenza al cluster (0.0 a 1.0). |
+| `cluster_name` | string | no | Nome breve descrittivo generato da LLM; "Outlier" per cluster -1. |
+
+Vincoli:
+
+- Ogni riga presente nel file processed deve avere un'assegnazione di cluster.
+- Il file deve essere riproducibile eseguendo l'Orchestrator.
 
 ## API/Demo Contract
 
@@ -323,4 +329,3 @@ Schema atteso (per ogni cluster):
 - `textrank`: Array di stringhe (keyword)
 - `keybert_sim`: Array di stringhe (keyword)
 - `llm_summary`: Stringa (Nome breve descrittivo generato da LLM locale)
-

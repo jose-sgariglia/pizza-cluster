@@ -135,6 +135,58 @@ Nessun task bloccato.
 
 ## Done
 
+### Esportazione Dataset Etichettato (Clustered Emails)
+
+Owner: Gemini (AI Agent)
+Stream: Integrazione
+Branch: `feature/labeled-dataset-export`
+Stato: Done
+
+Scopo:
+Garantire che la pipeline di orchestrazione produca un file Parquet finale con tutti i dati etichettati (cluster ID, probabilità e nomi descrittivi LLM).
+
+Handoff:
+Owner: Gemini (AI Agent)
+Stream: Integrazione
+Branch: `feature/labeled-dataset-export`
+Task: Esportazione Dataset Etichettato (Clustered Emails)
+File modificati:
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+- `DATA_CONTRACTS.md`
+- `DECISIONS.md`
+Test:
+- Validata logica di mappatura via script Python.
+- Verifica coerenza con DATA_CONTRACTS.md.
+Output:
+- Notebook aggiornato con export in `data/processed/jmail_emails_clustered.parquet`.
+Rischi:
+- I nomi dei cluster potrebbero essere "Outlier" se l'LLM naming viene limitato a un subset (come nel notebook corrente).
+
+### Creazione Notebook Orchestratore Pipeline Completa
+
+Owner: Filippo (Antigravity)
+Stream: Integrazione
+Branch: `feature/full-pipeline-notebook`
+Stato: Done
+
+Scopo:
+Creare un notebook centralizzato (`full_pipeline_orchestration.ipynb`) che orchestri l'intera pipeline di lavoro, dall'estrazione del dataset fino al preprocessing, embeddings, clustering UMAP+HDBSCAN e assegnazione dei nomi tramite LLM, riutilizzando esclusivamente i moduli validati presenti in `src/utils/`.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: Integrazione
+Branch: `feature/full-pipeline-notebook`
+Task: Creazione Notebook Orchestratore Pipeline Completa
+File creati/modificati:
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+- `TASK_BOARD.md`
+Test:
+- Validato sintatticamente l'IPYNB generato tramite esecuzione di Python nbformat.
+Output:
+- Nuovo notebook `full_pipeline_orchestration.ipynb` disponibile.
+Rischi:
+- Nessuno, il notebook prevede la possibilità di lavorare su limit_rows per il preprocessing per evitare sovraccarichi hardware.
+
 ### LLM-Naming per riassumere i cluster
 
 Owner: Filippo (Antigravity)
