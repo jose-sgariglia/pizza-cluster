@@ -4,9 +4,9 @@
 
 - Ogni task deve avere uno sviluppatore owner.
 - Ogni task deve dichiarare stream, branch e file ownership prima di iniziare.
-- `ROADMAP.md` resta la visione degli obiettivi funzionali.
+- \`ROADMAP.md\` resta la visione degli obiettivi funzionali.
 - Questo file gestisce il lavoro operativo asincrono tra sviluppatori e assistenti.
-- Spostare un task in `Done` solo dopo test/verifica e handoff.
+- Spostare un task in \`Done\` solo dopo test/verifica e handoff.
 
 ## Backlog
 
@@ -15,23 +15,23 @@
 
 Owner proposto: da assegnare
 Stream: feature engineering/documentazione
-Branch proposta: `feature/text-stat-features`
+Branch proposta: \`feature/text-stat-features\`
 
 Dipendenze:
 
-- decisione approvata su `combined_text` embeddings;
+- decisione approvata su \`combined_text\` embeddings;
 - contratto processed aggiornato se vengono aggiunte colonne.
 
 File scrivibili:
 
-- `DATA_CONTRACTS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
+- \`DATA_CONTRACTS.md\`
+- \`docs/knowledge/03_cleaning_feature_engineering.md\`
 - eventuale modulo feature, solo dopo approvazione.
 
 Output:
 
 - proposta per colonne testuali ausiliarie, ad esempio testo per statistiche o keyword extraction;
-- pro/contro rispetto a modificare `combined_text`;
+- pro/contro rispetto a modificare \`combined_text\`;
 - test previsti;
 - impatto su embeddings e clustering.
 
@@ -39,7 +39,7 @@ Output:
 
 Owner proposto: da assegnare
 Stream: feature engineering/documentazione
-Branch proposta: `feature/email-boilerplate-analysis`
+Branch proposta: \`feature/email-boilerplate-analysis\`
 
 Dipendenze:
 
@@ -48,7 +48,7 @@ Dipendenze:
 
 File scrivibili:
 
-- `docs/knowledge/03_cleaning_feature_engineering.md`
+- \`docs/knowledge/03_cleaning_feature_engineering.md\`
 - eventuali notebook diagnostici o report, previa approvazione.
 
 Output:
@@ -62,7 +62,7 @@ Output:
 
 Owner proposto: da assegnare
 Stream: feature engineering / NLP
-Branch proposta: `feature/entity-normalization`
+Branch proposta: \`feature/entity-normalization\`
 
 Scopo:
 Sviluppare una utility per normalizzare i nomi di persone e organizzazioni (es. "Barack Obama" vs "President Obama") per migliorare la densità semantica del clustering e del labeling.
@@ -75,7 +75,7 @@ Output:
 
 Owner proposto: da assegnare
 Stream: Preprocessing
-Branch proposta: `feature/advanced-cleaning`
+Branch proposta: \`feature/advanced-cleaning\`
 
 Scopo:
 Rimuovere il rumore dalle email (header, firme) e implementare filtri grammaticali (solo Sostantivi) per l'estrazione delle keyword, migliorando l'interpretabilità dei cluster.
@@ -88,13 +88,13 @@ Output:
 
 Owner: da assegnare dopo merge stream A e B
 Stream: integrazione
-Branch proposta: `integration/embeddings-features`
+Branch proposta: \`integration/embeddings-features\`
 
 Dipendenze:
 
 - stream embeddings baseline completato;
 - stream feature engineering completato;
-- `DATA_CONTRACTS.md` aggiornato.
+- \`DATA_CONTRACTS.md\` aggiornato.
 
 Output:
 
@@ -112,17 +112,17 @@ Nessun task assegnato in Ready.
 
 Owner: Gemini (AI Agent)
 Stream: Topic Modeling
-Branch: `feature/topic-labeling`
+Branch: \`feature/topic-labeling\`
 Stato: In Progress
 
 Scopo:
 Interpretazione semantica dei cluster tramite Topic Labeling, confrontando diversi approcci (YAKE, TextRank, c-TF-IDF, KeyBERT, LLM) per estrarre keyword e nomi di cluster significativi.
 
 File scrivibili:
-- `src/utils/topic_labeling.py`
-- `src/notebooks/cluster_labeling_experiment.ipynb`
-- `DECISIONS.md`
-- `docs/knowledge/08_topic_labeling.md`
+- \`src/utils/topic_labeling.py\`
+- \`src/notebooks/cluster_labeling_experiment.ipynb\`
+- \`DECISIONS.md\`
+- \`docs/knowledge/08_topic_labeling.md\`
 
 Output attesi:
 - Utility script con algoritmi di keyword extraction.
@@ -135,28 +135,55 @@ Nessun task bloccato.
 
 ## Done
 
+### Esportazione Dataset Etichettato (Clustered Emails)
+
+Owner: Gemini (AI Agent)
+Stream: Integrazione
+Branch: \`feature/labeled-dataset-export\`
+Stato: Done
+
+Scopo:
+Garantire che la pipeline di orchestrazione produca un file Parquet finale con tutti i dati etichettati (cluster ID, probabilità e nomi descrittivi LLM).
+
+Handoff:
+Owner: Gemini (AI Agent)
+Stream: Integrazione
+Branch: \`feature/labeled-dataset-export\`
+Task: Esportazione Dataset Etichettato (Clustered Emails)
+File modificati:
+- \`src/notebooks/full_pipeline_orchestration.ipynb\`
+- \`DATA_CONTRACTS.md\`
+- \`DECISIONS.md\`
+Test:
+- Validata logica di mappatura via script Python.
+- Verifica coerenza con DATA_CONTRACTS.md.
+Output:
+- Notebook aggiornato con export in \`data/processed/jmail_emails_clustered.parquet\`.
+Rischi:
+- I nomi dei cluster potrebbero essere "Outlier" se l'LLM naming viene limitato a un subset (come nel notebook corrente).
+
 ### Creazione Notebook Orchestratore Pipeline Completa
 
 Owner: Filippo (Antigravity)
 Stream: Integrazione
-Branch: `feature/full-pipeline-notebook`
+Branch: \`feature/full-pipeline-notebook\`
 Stato: Done
 
 Scopo:
-Creare un notebook centralizzato (`full_pipeline_orchestration.ipynb`) che orchestri l'intera pipeline di lavoro, dall'estrazione del dataset fino al preprocessing, embeddings, clustering UMAP+HDBSCAN e assegnazione dei nomi tramite LLM, riutilizzando esclusivamente i moduli validati presenti in `src/utils/`.
+Creare un notebook centralizzato (\`full_pipeline_orchestration.ipynb\`) che orchestri l'intera pipeline di lavoro, dall'estrazione del dataset fino al preprocessing, embeddings, clustering UMAP+HDBSCAN e assegnazione dei nomi tramite LLM, riutilizzando esclusivamente i moduli validati presenti in \`src/utils/\`.
 
 Handoff:
 Owner: Filippo (Antigravity)
 Stream: Integrazione
-Branch: `feature/full-pipeline-notebook`
+Branch: \`feature/full-pipeline-notebook\`
 Task: Creazione Notebook Orchestratore Pipeline Completa
 File creati/modificati:
-- `src/notebooks/full_pipeline_orchestration.ipynb`
-- `TASK_BOARD.md`
+- \`src/notebooks/full_pipeline_orchestration.ipynb\`
+- \`TASK_BOARD.md\`
 Test:
 - Validato sintatticamente l'IPYNB generato tramite esecuzione di Python nbformat.
 Output:
-- Nuovo notebook `full_pipeline_orchestration.ipynb` disponibile.
+- Nuovo notebook \`full_pipeline_orchestration.ipynb\` disponibile.
 Rischi:
 - Nessuno, il notebook prevede la possibilità di lavorare su limit_rows per il preprocessing per evitare sovraccarichi hardware.
 
@@ -164,7 +191,7 @@ Rischi:
 
 Owner: Filippo (Antigravity)
 Stream: Labelling Topic
-Branch: `feature/llm-naming`
+Branch: \`feature/llm-naming\`
 Stato: Done
 
 Scopo:
@@ -173,26 +200,26 @@ Sviluppare un'utility per l'assegnazione automatica di un nome (1-3 parole massi
 Handoff:
 Owner: Filippo (Antigravity)
 Stream: Labelling Topic
-Branch: `feature/llm-naming`
+Branch: \`feature/llm-naming\`
 Task: LLM-Naming per riassumere i cluster
 File modificati:
-- `src/utils/llm_naming.py`
-- `TASK_BOARD.md`
+- \`src/utils/llm_naming.py\`
+- \`TASK_BOARD.md\`
 Test:
-- Esecuzione `uv run python src/utils/llm_naming.py` andata a buon fine.
-- Risolto blocco di Ollama (generation loop) causato dall'uso dell'endpoint `/api/generate` passando a `/api/chat` e implementando un **Few-Shot Prompt** con temperatura 0.0 per garantire risposte formattate esattamente come richiesto.
+- Esecuzione \`uv run python src/utils/llm_naming.py\` andata a buon fine.
+- Risolto blocco di Ollama (generation loop) causato dall'uso dell'endpoint \`/api/generate\` passando a \`/api/chat\` e implementando un **Few-Shot Prompt** con temperatura 0.0 per garantire risposte formattate esattamente come richiesto.
 Output:
-- Modulo `get_llm_cluster_name` funzionante e validato in locale con modello `llama3`.
+- Modulo \`get_llm_cluster_name\` funzionante e validato in locale con modello \`llama3\`.
 Rischi:
 - La latenza dell'LLM può rallentare l'elaborazione per i 40 cluster, ma l'impostazione Few-Shot minimizza i tempi di inferenza.
 Prossimo passo:
-- Eseguire il processo massivamente nel notebook `cluster_labeling_experiment.ipynb` su tutti i cluster individuati.
+- Eseguire il processo massivamente nel notebook \`cluster_labeling_experiment.ipynb\` su tutti i cluster individuati.
 
 ### Sperimentante clustering UMAP + HDBSCAN e Grid Search
 
 Owner: Filippo (Antigravity)
 Stream: clustering
-Branch: `feature/clustering-hdbscan`
+Branch: \`feature/clustering-hdbscan\`
 Stato: Done
 
 Scopo:
@@ -201,21 +228,21 @@ Risolvere il blocco computazionale dell'approccio diretto sviluppando una pipeli
 Handoff:
 Owner: Filippo (Antigravity)
 Stream: clustering
-Branch: `feature/clustering-hdbscan`
+Branch: \`feature/clustering-hdbscan\`
 Task: Sperimentare clustering UMAP + HDBSCAN e Grid Search
 File modificati:
-- `src/utils/clustering_hdbscan.py`
-- `src/notebooks/clustering_umap_hdbscan.ipynb`
-- `src/notebooks/clustering_hdbscan_experiment.ipynb`
-- `DECISIONS.md`
-- `TASK_BOARD.md`
+- \`src/utils/clustering_hdbscan.py\`
+- \`src/notebooks/clustering_umap_hdbscan.ipynb\`
+- \`src/notebooks/clustering_hdbscan_experiment.ipynb\`
+- \`DECISIONS.md\`
+- \`TASK_BOARD.md\`
 Test:
 - Esecuzione notebook pipeline completata con successo in pochi secondi.
 - Grid Search completata.
 Output:
 - Utility per pipeline UMAP + HDBSCAN creata.
 - Notebook di grid search configurato.
-- Parametri finali scelti (Configurazione 9): `min_cluster_size=200`, `min_samples=10`.
+- Parametri finali scelti (Configurazione 9): \`min_cluster_size=200\`, \`min_samples=10\`.
 Rischi:
 - Nessuno, la pipeline ridotta è performante.
 Prossimo passo:
@@ -225,22 +252,22 @@ Prossimo passo:
 
 Owner: José (Codex)
 Stream: embeddings/studio/analisi
-Branch: `feature/embeddings-baseline`
+Branch: \`feature/embeddings-baseline\`
 Stato: Done
 
 Scopo:
-Generare embeddings per tre modelli diversi (`bge-small-en-v1.5`, `all-MiniLM-L6-v2`, `e5-base-v2`) e validare il processo tramite notebook diagnostico.
+Generare embeddings per tre modelli diversi (\`bge-small-en-v1.5\`, \`all-MiniLM-L6-v2\`, \`e5-base-v2\`) e validare il processo tramite notebook diagnostico.
 
 Handoff:
 Owner: José (Codex)
 Stream: embeddings/studio/analisi
-Branch: `feature/embeddings-baseline`
+Branch: \`feature/embeddings-baseline\`
 Task: Consolidare embeddings baseline
 File modificati:
-- `src/notebooks/embedding_process.ipynb`
+- \`src/notebooks/embedding_process.ipynb\`
 Test:
 - Esecuzione notebook (verifica visiva dei grafici diagnostici).
-- Verifica artefatti in `data/embeddings/` e `data/metadata/`.
+- Verifica artefatti in \`data/embeddings/\` e \`data/metadata/\`.
 Output:
 - Artefatti embedding per i 3 modelli generati e salvati.
 - Notebook diagnostico corretto per gestire norme L2 costanti (1.0).
@@ -253,12 +280,12 @@ Prossimo passo:
 
 Owner: José (Codex)
 Stream: feature engineering/documentazione
-Branch proposta: `fix/recipient-count-estimate`
+Branch proposta: \`fix/recipient-count-estimate\`
 Stato: Done
 
 Scopo:
 
-Verificare se `recipient_count_estimate` e' nullable per limiti reali dei dati raw o per un problema nella logica di parsing dei destinatari.
+Verificare se \`recipient_count_estimate\` e' nullable per limiti reali dei dati raw o per un problema nella logica di parsing dei destinatari.
 
 Dipendenze:
 
@@ -267,38 +294,38 @@ Dipendenze:
 
 File scrivibili:
 
-- `src/utils/data_processing.py`
-- `tests/test_data_processing.py`
-- `DATA_CONTRACTS.md`
-- `src/notebooks/data_preprocessing_validation.ipynb`
-- `Diary.md`
-- `TODO.md`
-- `TASK_BOARD.md`
+- \`src/utils/data_processing.py\`
+- \`tests/test_data_processing.py\`
+- \`DATA_CONTRACTS.md\`
+- \`src/notebooks/data_preprocessing_validation.ipynb\`
+- \`Diary.md\`
+- \`TODO.md\`
+- \`TASK_BOARD.md\`
 
 File da leggere:
 
-- `data/processed/jmail_emails_processed_sample.parquet`
-- `data/raw/jmail_emails_sample.parquet`
-- `data/metadata/jmail_processing_sample_metadata.json`
+- \`data/processed/jmail_emails_processed_sample.parquet\`
+- \`data/raw/jmail_emails_sample.parquet\`
+- \`data/metadata/jmail_processing_sample_metadata.json\`
 
 Piano:
 
 - confrontare colonne recipient raw e processed sul sample;
-- individuare formati concreti di `to_recipients`, `cc_recipients`, `bcc_recipients`;
-- leggere la funzione che produce `recipient_count_estimate`;
+- individuare formati concreti di \`to_recipients\`, \`cc_recipients\`, \`bcc_recipients\`;
+- leggere la funzione che produce \`recipient_count_estimate\`;
 - decidere se correggere il parsing o mantenere il campo nullable;
 - aggiungere test mirati se cambia logica runtime;
-- aggiornare `DATA_CONTRACTS.md` se cambia la garanzia del campo.
+- aggiornare \`DATA_CONTRACTS.md\` se cambia la garanzia del campo.
 
 Notebook diagnostico:
 
-- accorpato in `src/notebooks/data_preprocessing_validation.ipynb`;
-- sezione dedicata: `Diagnostica recipient_count_estimate`;
-- output generati in `reports/figures/data_preprocessing_validation/`, ignorati da Git.
+- accorpato in \`src/notebooks/data_preprocessing_validation.ipynb\`;
+- sezione dedicata: \`Diagnostica recipient_count_estimate\`;
+- output generati in \`reports/figures/data_preprocessing_validation/\`, ignorati da Git.
 
 Output attesi:
 
-- diagnosi del motivo per cui `recipient_count_estimate` e' nullo in molte righe del sample;
+- diagnosi del motivo per cui \`recipient_count_estimate\` e' nullo in molte righe del sample;
 - correzione o decisione documentata se il campo deve restare nullable;
 - test unitario sui formati recipient raw supportati, se necessario;
 - contratto processed aggiornato se cambia la garanzia del campo.
@@ -306,24 +333,24 @@ Output attesi:
 Handoff:
 Owner: José (Codex)
 Stream: feature engineering/documentazione
-Branch: `fix/recipient-count-estimate` proposta, lavoro attuale su branch locale corrente
+Branch: \`fix/recipient-count-estimate\` proposta, lavoro attuale su branch locale corrente
 PR: da aprire
 Task: Validare recipient_count_estimate
 File modificati:
-- `src/utils/data_processing.py`
-- `tests/test_data_processing.py`
-- `DATA_CONTRACTS.md`
-- `DECISIONS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
-- `src/notebooks/data_preprocessing_validation.ipynb`
-- `TASK_BOARD.md`
-- `Diary.md`
-- `TODO.md`
+- \`src/utils/data_processing.py\`
+- \`tests/test_data_processing.py\`
+- \`DATA_CONTRACTS.md\`
+- \`DECISIONS.md\`
+- \`docs/knowledge/03_cleaning_feature_engineering.md\`
+- \`src/notebooks/data_preprocessing_validation.ipynb\`
+- \`TASK_BOARD.md\`
+- \`Diary.md\`
+- \`TODO.md\`
 Test:
-- `uv run python -m pytest tests/test_data_processing.py -q` (`13 passed`)
-- `uv run python -m pytest -q` (`21 passed`)
-Output: Corretto `recipient_count_estimate` eliminando null artificiali da disallineamento indice, aggiunto `person_unknown`, gestito `Unknown` per righe senza recipient utilizzabili e rilevato `[redacted]`.
-Rischi: `recipient_count_estimate` resta una stima euristica basata sui campi recipient raw; `Unknown` indica persona non identificata/censurata, non una identita' risolta. Nel sample rigenerato `person_unknown` e' tutto `False` perche' ogni riga finale ha almeno un recipient utilizzabile; non copre recipient potenzialmente censurati dentro campi valorizzati.
+- \`uv run python -m pytest tests/test_data_processing.py -q\` (\`13 passed\`)
+- \`uv run python -m pytest -q\` (\`21 passed\`)
+Output: Corretto \`recipient_count_estimate\` eliminando null artificiali da disallineamento indice, aggiunto \`person_unknown\`, gestito \`Unknown\` per righe senza recipient utilizzabili e rilevato \`[redacted]\`.
+Rischi: \`recipient_count_estimate\` resta una stima euristica basata sui campi recipient raw; \`Unknown\` indica persona non identificata/censurata, non una identita' risolta. Nel sample rigenerato \`person_unknown\` e' tutto \`False\` perche' ogni riga finale ha almeno un recipient utilizzabile; non copre recipient potenzialmente censurati dentro campi valorizzati.
 Prossimo passo: discutere se rigenerare anche il dataset full oltre al sample e se aprire PR separata per questa correzione runtime.
 
 ### Preparare contratto dati processed
@@ -331,32 +358,32 @@ Prossimo passo: discutere se rigenerare anche il dataset full oltre al sample e 
 Handoff:
 Owner: José (Codex)
 Stream: feature engineering/documentazione
-Branch: `feature/processed-contracts`
+Branch: \`feature/processed-contracts\`
 PR: da aprire
 Task: Preparare contratto dati processed
 File modificati:
-- `DATA_CONTRACTS.md`
-- `Diary.md`
-- `TODO.md`
-- `TASK_BOARD.md`
+- \`DATA_CONTRACTS.md\`
+- \`Diary.md\`
+- \`TODO.md\`
+- \`TASK_BOARD.md\`
 Test:
-- `uv run python -m pytest tests/test_data_processing.py -q` (`9 passed`)
-- `uv run python -m pytest -q` (`17 passed`)
+- \`uv run python -m pytest tests/test_data_processing.py -q\` (\`9 passed\`)
+- \`uv run python -m pytest -q\` (\`17 passed\`)
 Output: Contratto processed aggiornato con path, formato, input richiesti, regole di trasformazione, schema colonne, nullabilita', vincoli, metadata e verifica sample.
-Rischi: `recipient_count_estimate` risulta nullable nel sample corrente; prima di usarlo come feature obbligatoria va validato o corretto.
-Prossimo passo: Avviare `Validare recipient_count_estimate` oppure chiudere PR documentale se il team vuole separare fix runtime e contratto.
+Rischi: \`recipient_count_estimate\` risulta nullable nel sample corrente; prima di usarlo come feature obbligatoria va validato o corretto.
+Prossimo passo: Avviare \`Validare recipient_count_estimate\` oppure chiudere PR documentale se il team vuole separare fix runtime e contratto.
 
 ### Proposta feature engineering fase 2
 
 Handoff:
 Owner: Filippo (Antigravity)
 Stream: feature engineering
-Branch: `feature/feature-engineering`
+Branch: \`feature/feature-engineering\`
 PR: N/A (local)
 Task: Proposta feature engineering fase 2
 File modificati:
-- `DECISIONS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
+- \`DECISIONS.md\`
+- \`docs/knowledge/03_cleaning_feature_engineering.md\`
 Test: Nessun file sorgente modificato, solo update documentale.
 Output: Feature ausiliarie proposte, approvate e registrate.
 Rischi: Durante l'implementazione andrà aggiornato DATA_CONTRACTS.md.
@@ -366,43 +393,43 @@ Prossimo passo: Sviluppo in src/utils/data_processing.py
 
 Owner: José (Codex)
 Stream: feature engineering/documentazione
-Branch: `feature/preprocessing-consolidation`
+Branch: \`feature/preprocessing-consolidation\`
 
 File modificati:
 
-- `TASK_BOARD.md`
-- `DECISIONS.md`
-- `docs/knowledge/03_cleaning_feature_engineering.md`
+- \`TASK_BOARD.md\`
+- \`DECISIONS.md\`
+- \`docs/knowledge/03_cleaning_feature_engineering.md\`
 
 File letti:
 
-- `src/utils/data_processing.py`
-- `tests/test_data_processing.py`
-- `src/notebooks/data_preprocessing_validation.ipynb`
-- `DATA_CONTRACTS.md`
+- \`src/utils/data_processing.py\`
+- \`tests/test_data_processing.py\`
+- \`src/notebooks/data_preprocessing_validation.ipynb\`
+- \`DATA_CONTRACTS.md\`
 
 Output:
 
 - confermato che la pipeline preprocessing e' gia' conservativa e testata;
-- approvata policy di non rimuovere stop words da `combined_text` per embeddings;
+- approvata policy di non rimuovere stop words da \`combined_text\` per embeddings;
 - documentata policy operativa preprocessing;
 - proposti sotto-task per colonne ausiliarie e analisi boilerplate/forward headers.
 
 Verifica:
 
-```bash
+\`\`\`bash
 uv run python -m pytest tests/test_data_processing.py -q
 uv run python -m pytest -q
-```
+\`\`\`
 
 Esito:
 
-- `9 passed`
-- `17 passed`
+- \`9 passed\`
+- \`17 passed\`
 
 Rischi residui:
 
-- eventuali nuove colonne ausiliarie richiederanno aggiornamento di `DATA_CONTRACTS.md`;
+- eventuali nuove colonne ausiliarie richiederanno aggiornamento di \`DATA_CONTRACTS.md\`;
 - normalizzazioni aggressive devono essere valutate con confronto embeddings/clustering.
 
 
@@ -411,12 +438,12 @@ Rischi residui:
 Handoff:
 Owner: Filippo (Antigravity)
 Stream: manutenzione
-Branch: `fix/data-extraction-docstring`
+Branch: \`fix/data-extraction-docstring\`
 PR: N/A (commit locale)
 Task: Correggere docstring contaminata in data extraction
 File modificati:
-- `src/utils/data_extraction.py`
-Test: `uv run python -m pytest tests/test_data_extraction.py -q` (Passati)
+- \`src/utils/data_extraction.py\`
+Test: \`uv run python -m pytest tests/test_data_extraction.py -q\` (Passati)
 Output: Docstring corretta
 Rischi: Nessuno
 Prossimo passo: Commit e push
@@ -429,12 +456,12 @@ Branch: workspace locale
 
 File modificati:
 
-- `AGENTS_COLLABORATION.md`
-- `TASK_BOARD.md`
-- `DECISIONS.md`
-- `DATA_CONTRACTS.md`
-- `docs/knowledge/agent_workflow.md`
-- `docs/knowledge/00_index.md`
+- \`AGENTS_COLLABORATION.md\`
+- \`TASK_BOARD.md\`
+- \`DECISIONS.md\`
+- \`DATA_CONTRACTS.md\`
+- \`docs/knowledge/agent_workflow.md\`
+- \`docs/knowledge/00_index.md\`
 
 Verifica:
 
