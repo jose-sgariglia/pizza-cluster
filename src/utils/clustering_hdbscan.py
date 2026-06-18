@@ -64,40 +64,83 @@ def run_hdbscan_direct(
 
 def run_umap_hdbscan(
     embeddings: np.ndarray,
-    n_components: int = 15,
-    min_cluster_size: int = 100,
-    min_samples: int = 50
+    n_neighbors: int = 30,
+    n_components: int = 5,
+    min_cluster_size: int = 15,
+    min_samples: int = 3,
+    cluster_selection_method: str = 'leaf',
+    sample_size: int = 100000
 ) -> Tuple[np.ndarray, np.ndarray, hdbscan.HDBSCAN, any]:
     import umap
     
-    logger.info(f"Avvio UMAP su {embeddings.shape[0]} vettori da {embeddings.shape[1]} dimensioni...")
-    # UMAP usa metric='cosine' perché è ideale per gli embeddings testuali
+    total_samples = embeddings.shape[0]
+    
+    if total_samples > sample_size:
+        logger.info(f"Dataset enorme ({total_samples} vettori). Eseguo sub-sampling a {sample_size} per addestramento UMAP e HDBSCAN.")
+        np.random.seed(42)
+        train_indices = np.random.choice(total_samples, size=sample_size, replace=False)
+        train_embeddings = embeddings[train_indices]
+    else:
+        train_embeddings = embeddings
+        
+    logger.info(f"Avvio addestramento UMAP su {train_embeddings.shape[0]} vettori da {embeddings.shape[1]} dimensioni...")
+    logger.info(f"Parametri UMAP: n_neighbors={n_neighbors}, n_components={n_components}, min_dist=0.01")
+    
     reducer = umap.UMAP(
-        n_neighbors=15, 
+        n_neighbors=n_neighbors, 
         n_components=n_components, 
         metric='cosine', 
+        min_dist=0.01,
         random_state=42
     )
-    reduced_embeddings = reducer.fit_transform(embeddings)
-    logger.info(f"UMAP completato. Nuova dimensionalità: {reduced_embeddings.shape}")
     
-    logger.info("Avvio HDBSCAN sui vettori ridotti...")
-    # HDBSCAN lavora sui 15D usando la distanza euclidea classica in modo rapidissimo
+    # Train UMAP on sample
+    reduced_train = reducer.fit_transform(train_embeddings)
+    logger.info(f"UMAP addestrato. Nuova dimensionalità: {reduced_train.shape}")
+    
+    logger.info("Avvio addestramento HDBSCAN sui vettori ridotti...")
+    logger.info(f"Parametri HDBSCAN: min_cluster_size={min_cluster_size}, min_samples={min_samples}, method='{cluster_selection_method}'")
+    
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=min_cluster_size,
         min_samples=min_samples,
         metric='euclidean',
-        cluster_selection_method='eom',
+        cluster_selection_method=cluster_selection_method,
         prediction_data=True,
-        core_dist_n_jobs=8
+        core_dist_n_jobs=-1
     )
-    clusterer.fit(reduced_embeddings)
+    clusterer.fit(reduced_train)
     
     n_clusters = len(set(clusterer.labels_)) - (1 if -1 in clusterer.labels_ else 0)
     n_noise = list(clusterer.labels_).count(-1)
-    logger.info(f"Clustering completato. Cluster trovati: {n_clusters}, Rumore: {n_noise}")
+    logger.info(f"Addestramento HDBSCAN completato sul campione. Cluster trovati: {n_clusters}, Rumore: {n_noise}")
     
-    return clusterer.labels_, clusterer.probabilities_, clusterer, reduced_embeddings
+    if total_samples > sample_size:
+        logger.info(f"Proiezione dei restanti {total_samples} vettori nei cluster...")
+        # Reduce all embeddings using the trained UMAP
+        logger.info("Trasformazione UMAP di tutto il dataset in corso (potrebbe richiedere tempo)...")
+        reduced_embeddings = reducer.transform(embeddings)
+        
+        # FIX: UMAP transform può generare NaN a causa di approssimazioni di virgola mobile.
+        if np.isnan(reduced_embeddings).any():
+            nan_count = np.isnan(reduced_embeddings).sum()
+            logger.warning(f"Attenzione: UMAP transform ha generato {nan_count} valori NaN. Verranno sostituiti con 0 per non bloccare HDBSCAN.")
+            reduced_embeddings = np.nan_to_num(reduced_embeddings, nan=0.0)
+        
+        # Predict clusters for all embeddings using approximate_predict
+        logger.info("Assegnazione HDBSCAN di tutto il dataset in corso...")
+        labels, probabilities = hdbscan.approximate_predict(clusterer, reduced_embeddings)
+        logger.info("Proiezione completata.")
+    else:
+        reduced_embeddings = reduced_train
+        labels = clusterer.labels_
+        probabilities = clusterer.probabilities_
+        
+    final_n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    final_n_noise = list(labels).count(-1)
+    logger.info(f"Clustering finale completato. Cluster totali trovati: {final_n_clusters}, Rumore: {final_n_noise}")
+    
+    return labels, probabilities, clusterer, reduced_embeddings
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
