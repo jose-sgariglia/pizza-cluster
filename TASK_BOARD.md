@@ -104,7 +104,29 @@ Output:
 
 ## Ready
 
-Nessun task assegnato in Ready.
+### Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)
+
+Owner proposto: Filippo (Antigravity) / Utente
+Stream: clustering
+Branch proposta: `feature/clustering-optimization`
+Stato: Ready
+
+Scopo:
+Rivisitare le configurazioni di UMAP e HDBSCAN alla luce della rigenerazione completa degli embedding su 1.75 milioni di email. Gli errori di configurazione precedenti (es. `n_neighbors` troppo basso, `min_cluster_size` non proporzionato) andranno corretti per evitare che il rumore si mescoli ai macro-cluster. Eseguire eventualmente su un campione se UMAP impiega troppo tempo.
+
+Dipendenze:
+- Run di `embedding_pipeline.py` completato con successo (file `email_embeddings.npy` disponibile).
+- Validazione geometrica eseguita tramite `final_embeddings_validation.ipynb`.
+
+File scrivibili:
+- `src/utils/clustering_hdbscan.py`
+- `src/notebooks/clustering_umap_hdbscan.ipynb`
+- `DECISIONS.md`
+
+Output:
+- Nuovi iperparametri validati per scalare sui 1.75M di vettori `bge-small` ottimizzati.
+- Parametri candidati UMAP: `n_neighbors=30/50`, `min_dist=0.0`.
+- Parametri candidati HDBSCAN: `min_cluster_size` proporzionale al dataset (es. valutare min_cluster_size molto più alti visto il volume).
 
 ## In Progress
 
@@ -134,6 +156,38 @@ Output attesi:
 Nessun task bloccato.
 
 ## Done
+
+### Ottimizzazione Token-Aware Chunking e Decay Pooling
+
+Owner: Filippo (Antigravity)
+Stream: embeddings
+Branch: `feature/embedding-optimizations`
+Stato: Done
+
+Scopo:
+Migliorare la qualità semantica e la densità geometrica degli embedding per evitare falsi raggruppamenti causati da firme o boilerplate, e scalare la pipeline per gestire senza crash enormi dataset.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: embeddings
+Branch: `feature/embedding-optimizations`
+Task: Ottimizzazione Token-Aware Chunking e Decay Pooling
+File modificati:
+- `src/utils/embedding_pipeline.py`
+- `.env`
+- `DECISIONS.md`
+- `docs/knowledge/07_embedding_pipeline_optimizations.md`
+- `src/notebooks/final_embeddings_validation.ipynb` (creato)
+Test:
+- Eseguito sweep K-Means su campione 3.1k: registrato un incremento del Silhouette Score del +38% e una "perdita" calcolata di falsa stabilità (-0.1 ARI).
+- Generato nuovo notebook `final_embeddings_validation.ipynb`.
+- Risolto bug OOM su batch colossali (1 Miliardo di caratteri) con tecnica di *Slicing Sequenziale*.
+Output:
+- Pipeline robusta e attiva in background su 1.75 milioni di record.
+Rischi:
+- Esecuzione massiva completata (14 ore).
+Prossimo passo:
+- Passare a `Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)`.
 
 ### Esportazione Dataset Etichettato (Clustered Emails)
 
