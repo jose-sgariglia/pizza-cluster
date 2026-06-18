@@ -10,6 +10,70 @@
 
 ## Backlog
 
+### Gestione Thread Email
+
+Owner proposto: da assegnare
+Stream: Preprocessing
+Branch proposta: `feature/email-thread-detection`
+
+Scopo:
+Alcune email sono risposte o forward di conversazioni precedenti. Il corpo può contenere messaggi concatenati separati da header del tipo `-----Original Message-----`. Senza gestione, il `combined_text` ingloba tutto il thread come se fosse un unico documento, introducendo contenuto ridondante e fuorviante per embeddings e clustering.
+
+Dipendenze:
+- boilerplate detection completato (merged);
+- `DATA_CONTRACTS.md` aggiornato prima di modificare `content_clean`.
+
+File scrivibili:
+- `src/utils/data_processing.py`
+- `src/utils/constants/preprocessing.py`
+- `DATA_CONTRACTS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+- `tests/test_data_processing.py`
+
+Output attesi:
+- funzione `split_thread_body(text) -> tuple[str, str | None]` che isola il body del messaggio corrente dal thread citato;
+- nuova colonna `has_thread` (bool): `True` se è stato rilevato almeno un forward/reply header nel corpo;
+- `content_clean` aggiornato a contenere solo il corpo del messaggio corrente;
+- documentazione e test unitari;
+- valutazione dell'impatto su clustering vs baseline.
+
+Rischi:
+- alcune email hanno come contenuto principale proprio il messaggio inoltrato; uno strip aggressivo del thread eliminerebbe il contenuto reale;
+- le catene di risposta sono strutturalmente eterogenee: il forward header non è standardizzato;
+- approccio consigliato: safe by default, come per il disclaimer.
+
+---
+
+### Arricchimento Contestuale via LLM
+
+Owner proposto: da assegnare
+Stream: Feature Engineering / NLP
+Branch proposta: `feature/llm-contextual-enrichment`
+
+Scopo:
+Alcune email assumono un contesto implicito (riferimenti a eventi, persone o accordi non menzionati esplicitamente). Questo riduce la qualità semantica degli embeddings e produce cluster poco interpretabili. L'obiettivo è usare un LLM locale (Ollama) per aggiungere una colonna di contesto sintetico che arricchisca il testo prima dell'embedding.
+
+Dipendenze:
+- pipeline di processing stabile (merged);
+- Ollama disponibile in locale con un modello adatto (es. `llama3`);
+- `DATA_CONTRACTS.md` aggiornato prima di aggiungere nuove colonne al processed.
+
+File scrivibili:
+- `src/utils/data_processing.py` o nuovo modulo `src/utils/contextual_enrichment.py`
+- `DATA_CONTRACTS.md`
+- `docs/knowledge/` (nuovo documento dedicato)
+- `tests/`
+
+Output attesi:
+- funzione `enrich_with_context(text, model) -> str` che genera una breve stringa di contesto (es. 1-2 frasi) a partire dal testo dell'email;
+- nuova colonna `context_summary` (string, nullable): contesto sintetico generato dall'LLM;
+- valutazione dell'impatto: confronto embeddings con e senza `context_summary` concatenato a `combined_text`;
+- stima del costo computazionale (latenza per row, batch size ottimale).
+
+Rischi:
+- latenza LLM: con 355 email nel sample il costo è gestibile; su dataset full (~40k+) richiede batching e caching;
+- allucinazioni LLM: il contesto generato potrebbe introdurre bias semantico; validazione qualitativa obbligatoria prima del merge;
+- dipendenza da Ollama locale: la pipeline non è riproducibile su macchine senza Ollama; valutare flag `--skip-enrichment` per ambienti senza GPU.
 
 ### Valutare colonne ausiliarie per feature statistiche
 
@@ -521,3 +585,23 @@ Verifica:
 
 - controllo sintattico manuale Markdown;
 - nessun codice modificato.
+
+### Raffinamento Preprocessing e Pulizia Rumore
+
+Owner: Gemini (AI Agent)
+Stream: Preprocessing
+Branch: `feature/refined-preprocessing`
+Stato: In Progress
+
+Scopo:
+Migliorare la qualità del dataset in input agli embeddings raffinando i filtri (es. Salesforce), rimuovendo feature inutilizzate e integrando analisi contestuali/LLM per ridurre il rumore semantico.
+
+File scrivibili:
+- `src/utils/data_processing.py`
+- `DATA_CONTRACTS.md`
+- `DECISIONS.md`
+- `docs/knowledge/03_cleaning_feature_engineering.md`
+
+Output attesi:
+- Filtri migliorati per email promozionali/automatiche.
+- Dataset snellito (rimozione feature superflue).
