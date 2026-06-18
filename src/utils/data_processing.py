@@ -1,3 +1,14 @@
+from __future__ import annotations
+from src.utils.constants.preprocessing import (
+    KEEP_COLUMNS,
+    REDACTION_PATTERNS,
+    COMBINED_REDACTION_PATTERN,
+    BLACKLIST_DOMAINS,
+    EMBEDDING_TEXT_TEMPLATE,
+    DISCLAIMER_DELIMITER_RE,
+    DISCLAIMER_KEYWORD_ANCHORS,
+)
+
 """Cleaning and rough feature engineering for JMAIL email data.
 
 Example:
@@ -8,7 +19,7 @@ Example:
     ```
 """
 
-from __future__ import annotations
+
 
 import argparse
 import json
@@ -20,42 +31,12 @@ from typing import Any
 import pandas as pd
 from dotenv import dotenv_values
 
-
 DEFAULT_ENV_FILE = ".env"
 DEFAULT_RAW_FILENAME = "jmail_emails.parquet"
 DEFAULT_PROCESSED_FILENAME = "jmail_emails_processed.parquet"
 DEFAULT_METADATA_FILENAME = "jmail_processing_metadata.json"
 DEFAULT_TEST_PROCESSED_FILENAME = "jmail_emails_processed_sample.parquet"
 DEFAULT_TEST_METADATA_FILENAME = "jmail_processing_sample_metadata.json"
-KEEP_COLUMNS = [
-    "id",
-    "doc_id",
-    "message_index",
-    "sender",
-    "subject",
-    "to_recipients",
-    "cc_recipients",
-    "bcc_recipients",
-    "sent_at",
-    "content_markdown",
-    "attachments",
-    "email_drop_id",
-    "is_promotional",
-    "release_batch",
-    "epstein_is_sender",
-    "all_participants",
-]
-REDACTION_PATTERNS = (
-    re.compile(r"\bredacted\b", re.IGNORECASE),
-    re.compile(r"\bwithheld\b", re.IGNORECASE),
-    re.compile(r"\bsealed\b", re.IGNORECASE),
-    re.compile(r"\[\s*redacted\s*\]", re.IGNORECASE),
-    re.compile(r"\[+\s*(?:redacted|withheld|sealed)\s*\]+", re.IGNORECASE),
-    re.compile(r"\bX{4,}\b", re.IGNORECASE),
-    re.compile(r"[█■]{2,}"),
-)
-
-
 def build_processing_paths(
     env_file: str | Path = DEFAULT_ENV_FILE,
     raw_filename: str = DEFAULT_RAW_FILENAME,
@@ -119,21 +100,53 @@ def has_redaction_marker(value: Any) -> bool:
 
 
 def count_redaction_markers(value: Any) -> int:
-    """Count redaction/censorship markers in the text.
+    """Count redaction/censorship markers in the text."""
+    if not isinstance(value, str):
+        return 0
+    return len(COMBINED_REDACTION_PATTERN.findall(value))
+
+def split_body_disclaimer(text: str) -> tuple[str, str | None]:
+    """Split email text into body and legal disclaimer using position-aware heuristics.
+
+    Two strategies are tried in order, both with a safe-by-default posture:
+    if confidence is low, the original text is returned unchanged.
+
+    Strategy 1: structural delimiter line (e.g. ---) confirmed by a keyword anchor
+    in the first 500 chars of the remaining text.
+    Strategy 2: keyword anchor found in the last 30% of lines, when no delimiter exists.
+
+    Forward headers (Original Message blocks, reply chains) are out of scope.
 
     Example:
         ```python
-        count_redaction_markers("[REDACTED] and [SEALED]")
+        body, disc = split_body_disclaimer("Hi team\\n---\\nDisclaimer: This email is confidential.")
         ```
     """
+    if not isinstance(text, str) or not text.strip():
+        return text if isinstance(text, str) else "", None
 
-    if not isinstance(value, str):
-        return 0
-    combined_pattern = re.compile(
-        r"\[+\s*(?:redacted|withheld|sealed)\s*\]+|\bredacted\b|\bwithheld\b|\bsealed\b|\bX{4,}\b|[█■]{2,}",
-        re.IGNORECASE
-    )
-    return len(combined_pattern.findall(value))
+    lines = text.splitlines()
+    n = len(lines)
+    if n < 3:
+        return text, None
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if DISCLAIMER_DELIMITER_RE.match(stripped):
+            remaining = "\n".join(lines[i + 1 :])
+            if any(anchor.search(remaining[:500]) for anchor in DISCLAIMER_KEYWORD_ANCHORS):
+                body = "\n".join(lines[:i]).strip()
+                if body:
+                    return body, remaining.strip() or None
+
+    threshold = max(0, int(n * 0.70))
+    for i in range(threshold, n):
+        if any(anchor.search(lines[i]) for anchor in DISCLAIMER_KEYWORD_ANCHORS):
+            body = "\n".join(lines[:i]).strip()
+            if body:
+                return body, "\n".join(lines[i:]).strip() or None
+
+    return text, None
 
 
 def estimate_recipient_count(*values: Any) -> int:
@@ -225,25 +238,33 @@ def add_text_features(df: pd.DataFrame) -> pd.DataFrame:
 
     result = df.copy()
     result["subject_clean"] = result.get("subject", "").map(normalize_text)
-    result["content_clean"] = result.get("content_markdown", "").map(normalize_text)
+
+    raw_content = (
+        result["content_markdown"].fillna("")
+        if "content_markdown" in result.columns
+        else pd.Series("", index=result.index)
+    )
+    split_results = raw_content.map(split_body_disclaimer)
+    result["content_clean"] = split_results.map(lambda x: normalize_text(x[0]))
+    result["has_disclaimer"] = split_results.map(lambda x: x[1] is not None)
+
     result["combined_text"] = (
         result["subject_clean"].where(result["subject_clean"] != "", "")
         + "\n\n"
         + result["content_clean"].where(result["content_clean"] != "", "")
     ).str.strip()
-    result["subject_length"] = result["subject_clean"].str.len().fillna(0).astype("Int64")
-    result["content_length"] = result["content_clean"].str.len().fillna(0).astype("Int64")
+    # Mantieni lunghezza combinata come feature utile per modelli
     result["combined_text_length"] = result["combined_text"].str.len().fillna(0).astype("Int64")
-    result["has_subject"] = result["subject_clean"] != ""
+    
+    # Rilevazione e densità delle redazioni/censure
     result["has_redaction"] = result["subject"].map(has_redaction_marker) | result["content_markdown"].map(
         has_redaction_marker
     )
-    result["redaction_count"] = result["subject"].map(count_redaction_markers).fillna(0).astype("Int64") + result["content_markdown"].map(count_redaction_markers).fillna(0).astype("Int64")
-    result["word_count"] = result["combined_text"].str.split().str.len().fillna(0).astype("Int64")
+    result["redaction_count"] = result["subject"].map(count_redaction_markers).fillna(0).astype("Int64") + \
+                                result["content_markdown"].map(count_redaction_markers).fillna(0).astype("Int64")
     
-    combined_len = result["combined_text_length"]
-    upper_count = result["combined_text"].str.count(r"[A-Z]")
-    result["uppercase_ratio"] = (upper_count / combined_len.where(combined_len > 0)).fillna(0.0)
+    # Redaction ratio: rapporto tra numero di censure e lunghezza testo (densità del segnale di oscuramento)
+    result["redaction_ratio"] = (result["redaction_count"] / result["combined_text_length"].where(result["combined_text_length"] > 0)).fillna(0.0)
     
     return result
 
@@ -263,11 +284,7 @@ def add_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
     else:
         result["sent_at_datetime"] = pd.to_datetime(result["sent_at"], errors="coerce", utc=True)
 
-    result["sent_year"] = result["sent_at_datetime"].dt.year.astype("Int64")
-    result["sent_month"] = result["sent_at_datetime"].dt.month.astype("Int64")
-    result["sent_dayofweek"] = result["sent_at_datetime"].dt.dayofweek.astype("Int64")
-    result["sent_hour"] = result["sent_at_datetime"].dt.hour.astype("Int64")
-    result["is_weekend"] = result["sent_dayofweek"].isin([5, 6])
+# Task 2: Rimossa granularità temporale (anno, mese, ora, weekend) per mantenere solo il timestamp generico
     return result
 
 
@@ -284,8 +301,7 @@ def add_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     sender = result.get("sender")
     attachments = result.get("attachments")
 
-    result["has_sender"] = sender.map(lambda value: isinstance(value, str) and bool(value.strip())) if sender is not None else False
-    result["has_attachments"] = attachments.fillna(0).astype("Int64") > 0 if attachments is not None else False
+    # Conserviamo il conteggio allegati (generico) ma non il flag booleano ridondante
     result["attachment_count"] = attachments.fillna(0).astype("Int64") if attachments is not None else 0
     result = fill_unknown_recipients(result)
     result["recipient_count_estimate"] = estimate_recipient_counts(
@@ -293,7 +309,6 @@ def add_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
         result.get("cc_recipients"),
         result.get("bcc_recipients"),
     )
-    
     sender_series = result.get("sender", pd.Series("", index=result.index)).fillna("").astype(str)
     result["sender_domain"] = sender_series.str.extract(r"@([a-zA-Z0-9.-]+)", expand=False).str.lower()
     
@@ -350,7 +365,29 @@ def remove_empty_text_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[df["combined_text"].str.len() > 0].copy()
 
 
-def process_emails(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+
+def apply_embedding_template(df: pd.DataFrame, template: str) -> pd.DataFrame:
+    """Apply a structured template to create the final text for embeddings.
+    
+    Placeholder names in template should match column names.
+    """
+    result = df.copy()
+    
+    def format_row(row):
+        return template.format(
+            date=row.get("sent_at", "Unknown"),
+            sender=row.get("sender", "Unknown"),
+            recipients=row.get("to_recipients", "Unknown"),
+            subject=row.get("subject_clean", "No Subject"),
+            body=row.get("content_clean", "No Content")
+        )
+    
+    result["combined_text"] = result.apply(format_row, axis=1)
+    result["combined_text_length"] = result["combined_text"].str.len().fillna(0).astype("Int64")
+    return result
+
+
+def process_emails(df: pd.DataFrame, env_values: dict[str, str] | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Run the first cleaning and rough feature-engineering pipeline.
 
     Example:
@@ -364,10 +401,20 @@ def process_emails(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     selected_rows = len(selected)
     filtered = filter_promotional_emails(selected)
     after_promotional_filter = len(filtered)
+    # 1. Pulizia e feature engineering di base
     with_text = add_text_features(filtered)
     with_time = add_temporal_features(with_text)
     enriched = add_metadata_features(with_time)
-    processed = remove_empty_text_rows(enriched)
+    
+    # 2. Applicazione template strutturato (Task 3)
+    template = (env_values or {}).get("EMBEDDING_TEXT_TEMPLATE", EMBEDDING_TEXT_TEMPLATE)
+    # Gestione escape per newline se caricato da .env
+    template = template.replace("\\n", "\n") 
+    
+    templated = apply_embedding_template(enriched, template)
+    
+    # 3. Pulizia finale righe vuote
+    processed = remove_empty_text_rows(templated)
 
     metadata = {
         "processed_at_utc": datetime.now(UTC).isoformat(),
@@ -432,7 +479,7 @@ def run_processing_with_limit(
     if is_sample:
         raw = raw.head(limit).copy()
 
-    processed, metadata = process_emails(raw)
+    processed, metadata = process_emails(raw, env_values=values)
     metadata["execution_mode"] = "sample" if is_sample else "full"
     metadata["input_limit"] = limit
 

@@ -17,6 +17,7 @@ from src.utils.data_processing import (
     normalize_text,
     process_emails,
     run_processing_with_limit,
+    split_body_disclaimer,
 )
 
 
@@ -115,8 +116,7 @@ class DataProcessingTestCase(unittest.TestCase):
         self.assertIn("combined_text", processed.columns)
         self.assertIn("recipient_count_estimate", processed.columns)
         self.assertIn("redaction_count", processed.columns)
-        self.assertIn("sent_hour", processed.columns)
-        self.assertIn("is_weekend", processed.columns)
+        self.assertIn("redaction_ratio", processed.columns)
         self.assertIn("sender_domain", processed.columns)
         self.assertIn("is_epstein_involved", processed.columns)
         self.assertIn("attachment_count", processed.columns)
@@ -152,6 +152,83 @@ class DataProcessingTestCase(unittest.TestCase):
             self.assertEqual(raw_path, root / "data" / "raw" / "custom_raw.parquet")
             self.assertEqual(processed_path, root / "data" / "processed" / "custom_processed.parquet")
             self.assertEqual(metadata_path, root / "data" / "metadata" / "custom_metadata.json")
+
+
+class DisclaimerSplitTestCase(unittest.TestCase):
+    def test_split_detects_structural_delimiter_with_keyword_confirmation(self) -> None:
+        text = "Hello team.\nPlease see the attached report.\n---\nDisclaimer: This email is confidential."
+        body, disclaimer = split_body_disclaimer(text)
+        self.assertEqual(body, "Hello team.\nPlease see the attached report.")
+        self.assertIsNotNone(disclaimer)
+        self.assertIn("Disclaimer", disclaimer)
+
+    def test_split_ignores_delimiter_without_keyword_confirmation(self) -> None:
+        text = "Hello team.\n---\nBest regards,\nJohn Smith"
+        body, disclaimer = split_body_disclaimer(text)
+        self.assertEqual(body, text)
+        self.assertIsNone(disclaimer)
+
+    def test_split_detects_keyword_anchor_in_last_30_percent(self) -> None:
+        lines = ["Line one.", "Line two.", "Line three.", "Line four.", "Line five."]
+        footer = "This e-mail is intended only for the use of the individual to whom it is addressed."
+        text = "\n".join(lines) + "\n" + footer
+        body, disclaimer = split_body_disclaimer(text)
+        self.assertEqual(body, "\n".join(lines))
+        self.assertIsNotNone(disclaimer)
+
+    def test_split_does_not_trigger_keyword_in_first_70_percent(self) -> None:
+        # keyword in line 0 of a 10-line email — well above the 30% threshold
+        lines = ["Privileged and Confidential — Project Alpha"] + [f"Line {i}." for i in range(9)]
+        text = "\n".join(lines)
+        body, disclaimer = split_body_disclaimer(text)
+        self.assertEqual(body, text)
+        self.assertIsNone(disclaimer)
+
+    def test_split_returns_original_when_no_disclaimer_found(self) -> None:
+        text = "Hi, just wanted to follow up on the meeting.\nThanks,\nAlice"
+        body, disclaimer = split_body_disclaimer(text)
+        self.assertEqual(body, text)
+        self.assertIsNone(disclaimer)
+
+    def test_split_safe_when_body_would_be_empty_after_delimiter(self) -> None:
+        # delimiter is the first line — resulting body would be empty, must NOT strip
+        text = "---\nDisclaimer: This email is confidential.\nPlease delete if received in error."
+        body, disclaimer = split_body_disclaimer(text)
+        # Strategy 1: body before delimiter would be "" → falls through
+        # Strategy 2: keyword at line 1 → body = "---" (truthy) → splits
+        # Both are acceptable; what matters is original content is not lost
+        self.assertNotEqual(body, "")
+
+    def test_split_returns_original_for_non_string_input(self) -> None:
+        body, disclaimer = split_body_disclaimer(None)  # type: ignore[arg-type]
+        self.assertEqual(body, "")
+        self.assertIsNone(disclaimer)
+
+    def test_split_returns_original_for_short_text(self) -> None:
+        text = "---\nDisclaimer: This email is privileged and confidential."
+        body, disclaimer = split_body_disclaimer(text)
+        # Only 2 lines — n < 3 guard returns unchanged
+        self.assertEqual(body, text)
+        self.assertIsNone(disclaimer)
+
+    def test_add_text_features_adds_has_disclaimer_column(self) -> None:
+        df = pd.DataFrame({
+            "subject": ["Re: meeting"],
+            "content_markdown": [
+                "Hi,\nSee you tomorrow.\nBest,\nBob\n---\nDisclaimer: This e-mail is confidential."
+            ],
+        })
+        result = add_text_features(df)
+        self.assertIn("has_disclaimer", result.columns)
+        self.assertTrue(result.loc[0, "has_disclaimer"])
+
+    def test_add_text_features_false_when_no_disclaimer(self) -> None:
+        df = pd.DataFrame({
+            "subject": ["Hello"],
+            "content_markdown": ["Just a normal email body with no footer."],
+        })
+        result = add_text_features(df)
+        self.assertFalse(result.loc[0, "has_disclaimer"])
 
 
 if __name__ == "__main__":
