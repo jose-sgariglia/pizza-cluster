@@ -260,6 +260,7 @@ Path:
 
 - full: `data/processed/jmail_emails_clustered.parquet`
 - sample: `data/processed/jmail_emails_clustered_sample.parquet`
+- soft: `data/processed/jmail_emails_clustered_soft.parquet` (Contiene l'overlapping Top 10)
 
 Formato:
 
@@ -282,6 +283,8 @@ Colonne aggiunte rispetto a Processed:
 | `cluster` | integer | no | ID del cluster assegnato da HDBSCAN; -1 per outlier. |
 | `cluster_prob` | float | no | Probabilità di appartenenza al cluster (0.0 a 1.0). |
 | `cluster_name` | string | no | Nome breve descrittivo generato da LLM; "Outlier" per cluster -1. |
+| `top_10_clusters` | array[int] | no | (Solo nel file soft) Array dei 10 cluster con maggiore affinità. |
+| `top_10_probs` | array[float] | no | (Solo nel file soft) Array delle probabilità associate ai top 10 cluster. |
 
 Vincoli:
 
