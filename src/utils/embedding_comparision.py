@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from sklearn.cluster import KMeans, HDBSCAN
+from sklearn.cluster import KMeans, MiniBatchKMeans, HDBSCAN
 from sklearn.metrics import (
     silhouette_score,
     davies_bouldin_score,
@@ -50,7 +50,12 @@ def cluster_kmeans(
     Returns:
         Tuple of (labels, centroids)
     """
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, **kwargs)
+    if embeddings.shape[0] > 100000:
+        print(f"Dataset molto grande ({embeddings.shape[0]} samples). Uso MiniBatchKMeans per ottimizzazione.")
+        kmeans = MiniBatchKMeans(n_clusters=n_clusters, random_state=random_state, batch_size=10000, **kwargs)
+    else:
+        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, **kwargs)
+        
     labels = kmeans.fit_predict(embeddings)
     return labels, kmeans.cluster_centers_
 
@@ -78,6 +83,7 @@ def cluster_hdbscan(
 def compute_clustering_metrics(
     embeddings: np.ndarray,
     labels: np.ndarray,
+    sample_size: int | None = 20000,
 ) -> dict[str, float]:
     """Compute clustering quality metrics.
 
@@ -104,10 +110,20 @@ def compute_clustering_metrics(
         embeddings_valid = embeddings
         labels_valid = labels
 
+    # Campionamento per dataset enormi per evitare di esaurire la memoria (OOM) e calcolare le distanze
+    if sample_size is not None and embeddings_valid.shape[0] > sample_size:
+        np.random.seed(42)
+        indices = np.random.choice(embeddings_valid.shape[0], size=sample_size, replace=False)
+        embeddings_sample = embeddings_valid[indices]
+        labels_sample = labels_valid[indices]
+    else:
+        embeddings_sample = embeddings_valid
+        labels_sample = labels_valid
+
     # Compute metrics
-    silhouette = silhouette_score(embeddings_valid, labels_valid)
-    davies_bouldin = davies_bouldin_score(embeddings_valid, labels_valid)
-    calinski_harabasz = calinski_harabasz_score(embeddings_valid, labels_valid)
+    silhouette = silhouette_score(embeddings_sample, labels_sample)
+    davies_bouldin = davies_bouldin_score(embeddings_sample, labels_sample)
+    calinski_harabasz = calinski_harabasz_score(embeddings_sample, labels_sample)
 
     return {
         "silhouette": float(silhouette),

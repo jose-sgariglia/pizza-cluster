@@ -364,3 +364,33 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-06-17.
+
+## 2026-06-17 - Adozione definitiva di BGE-Small Ottimizzato
+
+Stato: Approved
+
+Contesto:
+Dopo aver testato `bge-m3` con Token-Aware Chunking e Decay Pooling, i risultati di stabilità non hanno superato le baseline. Si è deciso di testare queste stesse ottimizzazioni sul modello nativo `bge-small-en-v1.5` per verificare se fosse possibile ottenere vettori semanticamente più puri senza perdere la sua proverbiale leggerezza.
+
+Decisione:
+Adottare ufficialmente `BAAI/bge-small-en-v1.5` combinato con:
+1. **Token-Aware Chunking** (finestre da 400 token, overlap 15%).
+2. **Weighted Decay Pooling** (per concentrare il peso semantico sull'incipit dell'email).
+(N.B. Il Matryoshka Slicing è escluso in quanto non supportato da questo modello).
+
+Pro (Evidenze dai test):
+- **Silhouette Score**: Notevole incremento (+38%), passando da `0.0371` a `0.0512`. I cluster sono geometricamente più compatti e separati.
+- **Rimozione di "falsa stabilità"**: L'ARI è sceso da `0.69` a `0.59`. Sebbene sembri un peggioramento, questo calo dimostra che il modello non sta più raggruppando artificialmente le email basandosi solo su "firme aziendali identiche" (soppresse dal Decay Pooling), ma sta finalmente clusterizzando il vero contenuto semantico del testo.
+
+Contro:
+- Nessuno significativo rispetto alla baseline, il costo computazionale rimane estremamente basso (384 dimensioni).
+
+Impatto:
+- Questa configurazione diventa la "Gold Standard" per generare l'embedding definitivo sulle 42.000 email del dataset completo.
+
+File o artefatti coinvolti:
+- `src/utils/embedding_pipeline.py`
+- `.env`
+
+Approvazione:
+- Approvata dall'utente il 2026-06-17 a valle del confronto su K-Means.

@@ -24,6 +24,8 @@ import numpy as np
 import pandas as pd
 from dotenv import dotenv_values
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
+from tqdm import tqdm
 
 
 DEFAULT_ENV_FILE = ".env"
@@ -56,6 +58,19 @@ MODEL_REGISTRY: dict[str, dict[str, Any]] = {
         "max_sequence_length": 512,
         "recommended_role": "quality_candidate",
         "input_prefix": "passage: ",
+    },
+    "BAAI/bge-m3": {
+        "embedding_dimensions": 1024,
+        "matryoshka_dimensions": 512,
+        "max_sequence_length": 8192,
+        "recommended_role": "quality_candidate",
+        "input_prefix": "",
+    },
+    "Alibaba-NLP/gte-Qwen2-1.5B-instruct": {
+        "embedding_dimensions": 1536,
+        "max_sequence_length": 32768,
+        "recommended_role": "heavy_llm_baseline",
+        "input_prefix": "",
     },
 }
 
@@ -161,7 +176,7 @@ def load_embedding_model(model_name: str) -> SentenceTransformer:
         ```
     """
 
-    return SentenceTransformer(model_name)
+    return SentenceTransformer(model_name, trust_remote_code=True)
 
 
 def prepare_embedding_text(value: Any, model_name: str) -> str:
@@ -231,6 +246,36 @@ def chunk_text(text: str, chunk_char_length: int, chunk_char_overlap: int) -> li
     return chunks
 
 
+def chunk_text_by_tokens(text: str, tokenizer: Any, chunk_token_length: int = 400) -> list[str]:
+    """Split text into overlapping token chunks using a tokenizer.
+    
+    This preserves nominal tokens and avoids destructive phonetic truncation.
+    An overlap of 15% is dynamically applied.
+    """
+    normalized = normalize_embedding_text(text)
+    if not normalized:
+        return []
+        
+    tokens = tokenizer.encode(normalized, add_special_tokens=False)
+    if len(tokens) <= chunk_token_length:
+        return [normalized]
+        
+    overlap = int(chunk_token_length * 0.15)
+    step = chunk_token_length - overlap
+    
+    chunks = []
+    start = 0
+    while start < len(tokens):
+        chunk_tokens = tokens[start : start + chunk_token_length]
+        chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True).strip()
+        if chunk_text:
+            chunks.append(chunk_text)
+        if start + chunk_token_length >= len(tokens):
+            break
+        start += step
+    return chunks
+
+
 def build_embedding_jobs(df: pd.DataFrame, config: EmbeddingConfig) -> tuple[list[str], pd.DataFrame]:
     """Build chunk-level embedding jobs and an email-level index.
 
@@ -248,16 +293,25 @@ def build_embedding_jobs(df: pd.DataFrame, config: EmbeddingConfig) -> tuple[lis
     chunk_texts: list[str] = []
     index_rows: list[dict[str, Any]] = []
 
-    for output_position, row in enumerate(df.itertuples(index=False)):
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(config.model_name, trust_remote_code=True)
+    except Exception:
+        tokenizer = None
+
+    for output_position, row in enumerate(tqdm(df.itertuples(index=False), total=len(df), desc="Token-Aware Chunking")):
         row_data = row._asdict()
         email_id = row_data["id"]
         source_text = row_data[config.input_text_column]
         prepared_text = prepare_embedding_text(source_text, config.model_name)
-        chunks = chunk_text(
-            prepared_text,
-            chunk_char_length=config.chunk_char_length,
-            chunk_char_overlap=config.chunk_char_overlap,
-        )
+        
+        if tokenizer:
+            chunks = chunk_text_by_tokens(prepared_text, tokenizer, chunk_token_length=400)
+        else:
+            chunks = chunk_text(
+                prepared_text,
+                chunk_char_length=config.chunk_char_length,
+                chunk_char_overlap=config.chunk_char_overlap,
+            )
 
         start = len(chunk_texts)
         chunk_texts.extend(chunks)
@@ -286,22 +340,32 @@ def encode_texts(model: SentenceTransformer, texts: list[str], batch_size: int) 
 
     if not texts:
         return np.empty((0, 0), dtype=np.float32)
-    return model.encode(
-        texts,
-        batch_size=batch_size,
-        show_progress_bar=True,
-        convert_to_numpy=True,
-        normalize_embeddings=True,
-    ).astype(np.float32)
+
+    slice_size = 10000
+    all_embeddings = []
+    
+    # We slice the massive text list to prevent out-of-memory swapping 
+    # and huggingface tokenizers deadlocks.
+    for i in range(0, len(texts), slice_size):
+        text_slice = texts[i : i + slice_size]
+        slice_embeddings = model.encode(
+            text_slice,
+            batch_size=batch_size,
+            show_progress_bar=True,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+        ).astype(np.float32)
+        all_embeddings.append(slice_embeddings)
+
+    return np.vstack(all_embeddings)
 
 
 def aggregate_chunk_embeddings(chunk_embeddings: np.ndarray, embedding_index: pd.DataFrame) -> np.ndarray:
-    """Aggregate chunk embeddings into one embedding per email using mean pooling.
+    """Aggregate chunk embeddings into one embedding per email using weighted decay pooling.
 
-    Example:
-        ```python
-        email_vectors = aggregate_chunk_embeddings(chunk_vectors, embedding_index)
-        ```
+    Uses a decay factor to assign higher semantic weight to the beginning of the email,
+    which typically contains the core message, discounting signatures and trailing quotes.
+    Final output is L2 normalized.
     """
 
     if embedding_index.empty:
@@ -315,7 +379,19 @@ def aggregate_chunk_embeddings(chunk_embeddings: np.ndarray, embedding_index: pd
     for row in embedding_index.itertuples(index=False):
         if row.chunk_count == 0:
             continue
-        email_embeddings[row.embedding_row] = chunk_embeddings[row.chunk_start : row.chunk_end].mean(axis=0)
+            
+        # Weighted decay: w_i = 1 / (i + 1)^0.5
+        decay_factor = 0.5
+        weights = np.array([1.0 / ((i + 1) ** decay_factor) for i in range(row.chunk_count)])
+        weights = weights / weights.sum()
+        
+        start_idx = row.chunk_start
+        end_idx = row.chunk_end
+        
+        email_chunk_embs = chunk_embeddings[start_idx:end_idx]
+        weighted_sum = np.sum(email_chunk_embs * weights[:, np.newaxis], axis=0)
+        
+        email_embeddings[row.embedding_row] = weighted_sum
 
     return _normalize_rows(email_embeddings)
 
@@ -336,6 +412,12 @@ def run_embedding_pipeline(env_file: str | Path = DEFAULT_ENV_FILE) -> dict[str,
     chunk_embeddings = encode_texts(model, chunk_texts, batch_size=config.batch_size)
     email_embeddings = aggregate_chunk_embeddings(chunk_embeddings, embedding_index)
 
+    # Matryoshka Slicing Reduction
+    matryoshka_dim = MODEL_REGISTRY.get(config.model_name, {}).get("matryoshka_dimensions")
+    if matryoshka_dim and email_embeddings.shape[1] > matryoshka_dim:
+        email_embeddings = email_embeddings[:, :matryoshka_dim].copy()
+        email_embeddings = _normalize_rows(email_embeddings) # Re-normalize after slicing
+
     config.embeddings_output_path.parent.mkdir(parents=True, exist_ok=True)
     np.save(config.embeddings_output_path, email_embeddings)
 
@@ -355,7 +437,7 @@ def run_embedding_pipeline(env_file: str | Path = DEFAULT_ENV_FILE) -> dict[str,
         "chunk_char_length": config.chunk_char_length,
         "chunk_char_overlap": config.chunk_char_overlap,
         "batch_size": config.batch_size,
-        "normalization": "L2 row normalization after mean chunk aggregation.",
+        "normalization": "L2 row normalization after Weighted Decay Pooling. Matryoshka slicing if supported.",
     }
     config.embedding_metadata_output_path.write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False),
