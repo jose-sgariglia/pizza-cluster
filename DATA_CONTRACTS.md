@@ -166,6 +166,10 @@ Schema colonne processed:
 | `recipient_count_estimate` | integer | no | pipeline | Stima grezza da destinatari; `Unknown` conta come una persona non identificata. |
 | `sender_domain` | string | ammesso | pipeline | Dominio estratto da `sender`, se disponibile. |
 | `is_epstein_involved` | boolean | no | pipeline | `True` se Epstein risulta mittente o appare in `all_participants`. |
+| `content_new` | string | no | pipeline | Testo del mittente corrente: corpo della mail con thread/quote rimossi. Stringa vuota se l'input non è testuale. |
+| `content_quoted` | string \| null | ammesso | pipeline | Coda del thread (dal primo marker in poi). `null` se nessun marker rilevato. |
+| `has_thread` | boolean | no | pipeline | `True` se almeno un pattern di quote/forward è stato trovato in `content_markdown` (raw). |
+| `content_new_is_short` | boolean | no | pipeline | QA flag: `True` se `content_new.strip()` è < 20 caratteri. Non altera il parsing; usato per rilevare risposte quasi vuote. |
 
 Vincoli:
 
@@ -177,6 +181,9 @@ Vincoli:
 - Se nessun destinatario e' disponibile nei campi recipient, `to_recipients` viene impostato a `Unknown` e `person_unknown` a `True`.
 - `person_unknown` non rileva recipient potenzialmente censurati dentro campi recipient gia' valorizzati; per quello servirebbe una feature distinta, ad esempio `recipient_redacted`.
 - `recipient_count_estimate` non deve essere nullo nelle righe finali; in presenza di `Unknown` vale almeno 1.
+- `content_new_is_short=True` è un flag diagnostico e non determina la logica di downstream; `content_new` contiene comunque il testo originale senza il thread.
+- `content_quoted` è `null` (o `NaN` in pandas) quando `has_thread=False`; non deve essere stringa vuota.
+- `split_body_thread` opera su `content_markdown` (raw, pre-normalizzazione) per preservare i newline necessari alle ancore `(?m)^` dei pattern di rilevamento. `content_clean` è usata solo come fallback se `content_markdown` è assente. Il disclaimer legale (rimosso da `content_clean` via `split_body_disclaimer`) può comparire in `content_quoted` quando presente nel thread tail: comportamento atteso.
 - `is_promotional == True` viene escluso.
 - Le colonne raw mantenute non sono normalizzate.
 - Le nuove colonne ausiliarie per feature statistiche richiedono aggiornamento di questo contratto.

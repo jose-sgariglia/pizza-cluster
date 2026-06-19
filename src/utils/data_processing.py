@@ -7,6 +7,7 @@ from src.utils.constants.preprocessing import (
     EMBEDDING_TEXT_TEMPLATE,
     DISCLAIMER_DELIMITER_RE,
     DISCLAIMER_KEYWORD_ANCHORS,
+    THREAD_MARKER_PATTERNS,
 )
 
 """Cleaning and rough feature engineering for JMAIL email data.
@@ -149,6 +150,47 @@ def split_body_disclaimer(text: str) -> tuple[str, str | None]:
     return text, None
 
 
+def split_body_thread(text: str) -> tuple[str, str | None, bool, bool]:
+    """Split email body into sender content and quoted/forwarded thread tail.
+
+    Scans for the first quote or forward marker across all supported pattern types
+    and cuts there. The thread tail is preserved verbatim and never parsed
+    recursively — nested markers inside content_quoted are intentional.
+
+    Returns:
+        content_new: text before the first marker; equals the full body when no
+            marker is found.
+        content_quoted: text from the first marker onwards, or None if absent.
+        has_thread: True if at least one marker was detected.
+        content_new_is_short: True if len(content_new.strip()) < 20; a QA flag
+            only — does NOT alter the split result.
+
+    Example:
+        ```python
+        new, quoted, has_thread, short = split_body_thread(
+            "ok\\n\\nOn Jan 1, 2020, Alice wrote:\\n> Yes."
+        )
+        ```
+    """
+    if not isinstance(text, str):
+        return "", None, False, True
+    if not text.strip():
+        return text, None, False, len(text.strip()) < 20
+
+    earliest_pos = len(text)
+    for pattern in THREAD_MARKER_PATTERNS:
+        match = pattern.search(text)
+        if match and match.start() < earliest_pos:
+            earliest_pos = match.start()
+
+    if earliest_pos == len(text):
+        return text, None, False, len(text.strip()) < 20
+
+    content_new = text[:earliest_pos].rstrip("\n\r ")
+    content_quoted = text[earliest_pos:]
+    return content_new, content_quoted, True, len(content_new.strip()) < 20
+
+
 def estimate_recipient_count(*values: Any) -> int:
     """Estimate recipient count from raw recipient string fields.
 
@@ -210,9 +252,10 @@ def select_supported_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def filter_promotional_emails(df: pd.DataFrame) -> pd.DataFrame:
-    """Remove emails explicitly marked as promotional.
+    """Remove emails explicitly marked as promotional or sent from blacklisted domains.
 
-    Null values are retained because they represent unknown status, not confirmed promotion.
+    Null values for is_promotional are retained (unknown status, not confirmed promotion).
+    Rows where sender matches any BLACKLIST_DOMAINS entry are always removed.
 
     Example:
         ```python
@@ -220,9 +263,19 @@ def filter_promotional_emails(df: pd.DataFrame) -> pd.DataFrame:
         ```
     """
 
-    if "is_promotional" not in df.columns:
-        return df.copy()
-    return df.loc[df["is_promotional"] != True].copy()
+    result = df.copy()
+
+    if "is_promotional" in result.columns:
+        result = result.loc[result["is_promotional"] != True]
+
+    if "sender" in result.columns:
+        sender = result["sender"].fillna("").astype(str).str.lower()
+        blacklist_mask = pd.Series(False, index=result.index)
+        for entry in BLACKLIST_DOMAINS:
+            blacklist_mask = blacklist_mask | sender.str.contains(entry.lower(), regex=False)
+        result = result.loc[~blacklist_mask]
+
+    return result.copy()
 
 
 def add_text_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -351,6 +404,34 @@ def estimate_recipient_counts(
     return counts
 
 
+def add_thread_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Detect and split quoted/forwarded thread tails from raw email bodies.
+
+    Applies split_body_thread() to content_markdown (raw, pre-normalisation) so
+    that MULTILINE ^ anchors in all thread patterns can match line starts.
+    Falls back to content_clean only when content_markdown is absent.
+
+    Example:
+        ```python
+        enriched = add_thread_features(df)
+        ```
+    """
+    result = df.copy()
+    if "content_markdown" in result.columns:
+        source = result["content_markdown"].fillna("").astype(str)
+    elif "content_clean" in result.columns:
+        source = result["content_clean"].fillna("").astype(str)
+    else:
+        source = pd.Series("", index=result.index)
+
+    split_results = source.map(split_body_thread)
+    result["content_new"] = split_results.map(lambda x: x[0])
+    result["content_quoted"] = split_results.map(lambda x: x[1])
+    result["has_thread"] = split_results.map(lambda x: x[2])
+    result["content_new_is_short"] = split_results.map(lambda x: x[3])
+    return result
+
+
 def remove_empty_text_rows(df: pd.DataFrame) -> pd.DataFrame:
     """Remove rows without usable combined text.
 
@@ -405,14 +486,15 @@ def process_emails(df: pd.DataFrame, env_values: dict[str, str] | None = None) -
     with_text = add_text_features(filtered)
     with_time = add_temporal_features(with_text)
     enriched = add_metadata_features(with_time)
-    
+    with_threads = add_thread_features(enriched)
+
     # 2. Applicazione template strutturato (Task 3)
     template = (env_values or {}).get("EMBEDDING_TEXT_TEMPLATE", EMBEDDING_TEXT_TEMPLATE)
     # Gestione escape per newline se caricato da .env
-    template = template.replace("\\n", "\n") 
-    
-    templated = apply_embedding_template(enriched, template)
-    
+    template = template.replace("\\n", "\n")
+
+    templated = apply_embedding_template(with_threads, template)
+
     # 3. Pulizia finale righe vuote
     processed = remove_empty_text_rows(templated)
 
@@ -427,6 +509,7 @@ def process_emails(df: pd.DataFrame, env_values: dict[str, str] | None = None) -
         "output_columns": list(processed.columns),
         "redaction_policy": "Redaction markers including [redacted] are detected in has_redaction but text spans are preserved.",
         "recipient_unknown_policy": "Rows without usable recipient fields are marked with person_unknown and to_recipients=Unknown.",
+        "thread_split_policy": "split_body_thread() cuts content_clean at the first quote/forward marker; content_new holds the sender text, content_quoted the full thread tail.",
     }
     return processed, metadata
 
