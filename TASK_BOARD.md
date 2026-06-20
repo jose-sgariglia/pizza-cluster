@@ -168,29 +168,6 @@ Output:
 
 ## Ready
 
-### Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)
-
-Owner proposto: Filippo (Antigravity) / Utente
-Stream: clustering
-Branch proposta: `feature/clustering-optimization`
-Stato: Ready
-
-Scopo:
-Rivisitare le configurazioni di UMAP e HDBSCAN alla luce della rigenerazione completa degli embedding su 1.75 milioni di email. Gli errori di configurazione precedenti (es. `n_neighbors` troppo basso, `min_cluster_size` non proporzionato) andranno corretti per evitare che il rumore si mescoli ai macro-cluster. Eseguire eventualmente su un campione se UMAP impiega troppo tempo.
-
-Dipendenze:
-- Run di `embedding_pipeline.py` completato con successo (file `email_embeddings.npy` disponibile).
-- Validazione geometrica eseguita tramite `final_embeddings_validation.ipynb`.
-
-File scrivibili:
-- `src/utils/clustering_hdbscan.py`
-- `src/notebooks/clustering_umap_hdbscan.ipynb`
-- `DECISIONS.md`
-
-Output:
-- Nuovi iperparametri validati per scalare sui 1.75M di vettori `bge-small` ottimizzati.
-- Parametri candidati UMAP: `n_neighbors=30/50`, `min_dist=0.0`.
-- Parametri candidati HDBSCAN: `min_cluster_size` proporzionale al dataset (es. valutare min_cluster_size molto più alti visto il volume).
 
 ## In Progress
 
@@ -221,7 +198,38 @@ Nessun task bloccato.
 
 ## Done
 
-### Ottimizzazione Token-Aware Chunking e Decay Pooling
+### Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)
+
+Owner: Filippo (Antigravity)
+Stream: clustering
+Branch: `feature/clustering-optimization`
+Stato: Done
+
+Scopo:
+Rivisitare le configurazioni di UMAP e HDBSCAN alla luce della rigenerazione completa degli embedding su 1.75 milioni di email con l'ausilio di tecniche di ottimizzazione iperparametrica genetiche (CMA-ES).
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: clustering
+Branch: `feature/clustering-optimization`
+Task: Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)
+File modificati:
+- `src/utils/optuna_clustering.py`
+- `src/notebooks/clustering_umap_hdbscan.ipynb`
+- `DECISIONS.md`
+- `TASK_BOARD.md`
+- `docs/knowledge/09_cma_es_hyperparameter_tuning.md` (creato)
+Test:
+- Eseguito tuning con Optuna (CMA-ES) su 15k sample. Silhouette 0.63.
+- Parametri scelti: `n_neighbors=51`, `n_components=12`, `min_cluster_size=71`, `min_samples=100`, `cluster_selection_method="eom"`.
+- Esecuzione massiva notebook su 1.75M in background. Plot alberi disabilitato per evitare bug di Matplotlib.
+Output:
+- Parametri finali HDBSCAN e pipeline Soft-Clustering testata e funzionante.
+Rischi:
+- Nessuno, esecuzione notebook completata con successo.
+Prossimo passo:
+- Analisi output Topic Labeling.
+
 
 Owner: Filippo (Antigravity)
 Stream: embeddings
