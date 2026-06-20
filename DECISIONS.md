@@ -400,6 +400,7 @@ Approvazione:
 Stato: Approved
 
 Contesto:
+
 L'approccio manuale basato su Grid Search per l'ottimizzazione di UMAP e HDBSCAN non scalava in modo efficiente per dataset complessi e produceva combinazioni sub-ottimali. Era necessario un approccio dinamico per gestire i parametri. Inoltre, la visualizzazione di HDBSCAN causava crash dovuti a `np.inf` nelle distanze dei nodi sovrapposti (bug ellissi in matplotlib).
 
 Decisione:
@@ -430,3 +431,55 @@ File o artefatti coinvolti:
 
 Approvazione:
 - Approvata dall'utente il 2026-06-19.
+
+
+## 2026-06-19 - Fonte del thread-splitting: content_markdown invece di content_clean
+
+Stato: Approved
+
+Contesto:
+
+`add_thread_features()` usava `content_clean` come input per `split_body_thread()`. `content_clean` è prodotta da `normalize_text()` che fa `" ".join(value.split())`, collassando tutti i newline in spazi. Tutti i pattern di rilevamento thread usano ancore `(?m)^` (inizio-riga in modalità MULTILINE): senza newline, le ancore matchano solo a posizione 0, distruggendo il 96.5% dei segnali (1,896/1,965 su campione seed=42). Il risultato era `has_thread` all'1.7% invece del 19.6% atteso, e `content_new_is_short=True` al 100% (tutti i match a posizione 0 producono `content_new=""`). Documentato in `reports/thread_discrepancy_analysis.md`.
+
+Decisione:
+
+`add_thread_features()` usa `content_markdown` (raw, pre-normalizzazione) come fonte primaria per `split_body_thread()`. `content_clean` è mantenuta come fallback quando `content_markdown` non è disponibile. `normalize_text()` non viene modificata.
+
+Alternative considerate:
+
+- Modificare `normalize_text()` per preservare i newline: scartato perché `normalize_text` ha altri utilizzi (subject_clean) e cambiarla avrebbe effetti indiretti.
+- Applicare uno strip-only senza collasso interno prima dello split: valutato e non necessario; `content_markdown` raw non richiede pulizia minima per il funzionamento dei pattern.
+- Applicare `normalize_text()` su `content_new` e `content_quoted` dopo lo split: non implementato in questo step; richiede decisione esplicita separata se le colonne dovessero alimentare downstream oltre l'uso corrente (QA e analisi).
+
+Pro:
+
+- Ripristina la copertura di rilevamento thread: da 1.7% a 19.0% sul processed sample (baseline attesa ~19.6–21.3% dal censimento).
+- Rende `content_new_is_short` diagnosticamente corretto: scende dal 100% spurio al 29.7% reale.
+- Nessuna modifica a `normalize_text()`, `content_clean`, o al campo `combined_text` usato per gli embeddings.
+- Il disclaimer legale (rimosso da `content_clean`) può comparire in `content_quoted`: comportamento corretto, non in `content_new`.
+
+Contro:
+
+- `content_new` e `content_quoted` contengono testo raw (con redazioni e eventuale disclaimer in coda): non adatti come input diretto per embeddings senza normalizzazione aggiuntiva. Uso previsto: solo QA e analisi diagnostica.
+- La percentuale di `content_new` vuoto (puri forward senza preambolo) varia tra campioni: 4.1% su seed=42 random, 15.0% sul processed sample ordinato — campioni diversi, non un'anomalia della logica.
+
+Impatto:
+
+- `add_thread_features()` in `src/utils/data_processing.py` modificata.
+- Parquet `data/processed/jmail_emails_processed_sample.parquet` rigenerato.
+- Test aggiornati: `test_add_thread_features_prefers_content_markdown_over_clean` (logica invertita) e `test_add_thread_features_regression_normalize_text_bug` (test di regressione esplicito).
+- `DATA_CONTRACTS.md` aggiornato: fonte di `has_thread`, `content_new`, `content_quoted` e vincolo su `split_body_thread`.
+- `pipeline_processing.ipynb`: markdown cell sezione Thread Detection aggiornata.
+- Report diagnostico in `reports/thread_discrepancy_analysis.md`.
+
+File o artefatti coinvolti:
+
+- `src/utils/data_processing.py`
+- `tests/test_data_processing.py`
+- `DATA_CONTRACTS.md`
+- `src/notebooks/pipeline_processing.ipynb`
+- `reports/thread_discrepancy_analysis.md`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-19 dopo analisi diagnostica documentata in `reports/thread_discrepancy_analysis.md`.

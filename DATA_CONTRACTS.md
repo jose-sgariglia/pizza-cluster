@@ -91,13 +91,14 @@ Regole di trasformazione:
 - esclude righe con `is_promotional == True`;
 - conserva righe con `is_promotional` nullo o non vero;
 - normalizza whitespace in `subject_clean` e `content_clean`;
+- separa il disclaimer legale dal corpo della mail tramite euristica posizionale (delimitatore strutturale + keyword anchor); il corpo pulito va in `content_clean`, la presenza è segnalata da `has_disclaimer`; forward headers non sono gestiti in questa fase;
 - costruisce `combined_text` concatenando `subject_clean` e `content_clean`;
 - rimuove righe con `combined_text` vuoto;
 - conserva redazioni e marker sensibili nel testo;
 - segnala redazioni tramite `has_redaction`, includendo marker come `[redacted]`, `[REDACTED]`, withheld/sealed, sequenze `XXXX` e blocchi grafici;
 - quando nessun campo recipient contiene destinatari utilizzabili, valorizza `to_recipients` a `Unknown` e imposta `person_unknown`;
 - non rimuove stop words da `combined_text`;
-- non normalizza ancora email, nomi, firme, boilerplate o forward headers.
+- non normalizza email, nomi o forward headers.
 
 Colonne prodotte principali:
 
@@ -110,7 +111,8 @@ Colonne prodotte principali:
 - `combined_text_length`;
 - `has_subject`;
 - `has_redaction`;
-- `redaction_count`;
+- `redaction_count`
+- `redaction_ratio`;
 - `word_count`;
 - `uppercase_ratio`;
 - `sent_at_datetime`;
@@ -125,7 +127,8 @@ Colonne prodotte principali:
 - `attachment_count`;
 - `person_unknown`;
 - `recipient_count_estimate`;
-- `is_epstein_involved`.
+- `is_epstein_involved`;
+- `has_disclaimer`.
 
 Schema colonne processed:
 
@@ -148,40 +151,39 @@ Schema colonne processed:
 | `epstein_is_sender` | boolean | ammesso | raw | Flag raw. |
 | `all_participants` | string | ammesso | raw | Partecipanti raw, non normalizzati. |
 | `subject_clean` | string | no | pipeline | Whitespace normalizzato; stringa vuota se input non testuale. |
-| `content_clean` | string | no | pipeline | Whitespace normalizzato; redazioni preservate. |
+| `content_clean` | string | no | pipeline | Whitespace normalizzato; redazioni preservate; disclaimer legale rimosso se rilevato. |
+| `has_disclaimer` | boolean | no | pipeline | `True` se un disclaimer legale è stato rilevato e separato da `content_clean`. |
 | `combined_text` | string | no | pipeline | Campo testuale primario per embeddings; deve essere non vuoto. |
-| `subject_length` | integer | no | pipeline | Lunghezza di `subject_clean`. |
-| `content_length` | integer | no | pipeline | Lunghezza di `content_clean`. |
 | `combined_text_length` | integer | no | pipeline | Lunghezza di `combined_text`. |
 | `has_subject` | boolean | no | pipeline | `True` se `subject_clean` non e' vuoto. |
 | `has_redaction` | boolean | no | pipeline | Flag euristico; rileva anche `[redacted]`; non modifica il testo. |
 | `redaction_count` | integer | no | pipeline | Conteggio euristico marker redazione/censura. |
-| `word_count` | integer | no | pipeline | Numero parole in `combined_text`. |
-| `uppercase_ratio` | float | no | pipeline | Quota caratteri maiuscoli su lunghezza `combined_text`. |
+| `redaction_ratio` | float | no | pipeline | Rapporto tra numero di censure e lunghezza testo. |
 | `sent_at_datetime` | datetime UTC | ammesso | pipeline | Parsing di `sent_at` con errori convertiti a null. |
-| `sent_year` | nullable integer | ammesso | pipeline | Anno derivato da `sent_at_datetime`. |
-| `sent_month` | nullable integer | ammesso | pipeline | Mese derivato da `sent_at_datetime`. |
-| `sent_dayofweek` | nullable integer | ammesso | pipeline | Giorno settimana derivato da `sent_at_datetime`. |
-| `sent_hour` | nullable integer | ammesso | pipeline | Ora derivata da `sent_at_datetime`. |
 | `is_weekend` | boolean | no | pipeline | `True` se `sent_dayofweek` e' sabato o domenica. |
-| `has_sender` | boolean | no | pipeline | `True` se `sender` contiene testo non vuoto. |
-| `has_attachments` | boolean | no | pipeline | `True` se `attachments > 0`; null trattato come 0. |
 | `attachment_count` | integer | no | pipeline | Conteggio allegati; null trattato come 0. |
 | `person_unknown` | boolean | no | pipeline | `True` solo se nessuno tra `to_recipients`, `cc_recipients` e `bcc_recipients` contiene destinatari utilizzabili e viene usato `Unknown`. |
 | `recipient_count_estimate` | integer | no | pipeline | Stima grezza da destinatari; `Unknown` conta come una persona non identificata. |
 | `sender_domain` | string | ammesso | pipeline | Dominio estratto da `sender`, se disponibile. |
 | `is_epstein_involved` | boolean | no | pipeline | `True` se Epstein risulta mittente o appare in `all_participants`. |
+| `content_new` | string | no | pipeline | Testo del mittente corrente: corpo della mail con thread/quote rimossi. Stringa vuota se l'input non è testuale. |
+| `content_quoted` | string \| null | ammesso | pipeline | Coda del thread (dal primo marker in poi). `null` se nessun marker rilevato. |
+| `has_thread` | boolean | no | pipeline | `True` se almeno un pattern di quote/forward è stato trovato in `content_markdown` (raw). |
+| `content_new_is_short` | boolean | no | pipeline | QA flag: `True` se `content_new.strip()` è < 20 caratteri. Non altera il parsing; usato per rilevare risposte quasi vuote. |
 
 Vincoli:
 
 - `combined_text` deve essere non vuoto nelle righe finali.
 - `combined_text` e' il campo testuale default per `Email Embeddings`.
-- `combined_text` mantiene stop words, redazioni, nomi, indirizzi email, boilerplate e forward headers.
+- `combined_text` mantiene stop words, redazioni, nomi, indirizzi email e forward headers; i disclaimer legali vengono rimossi prima della costruzione del campo.
 - Le redazioni non vengono rimosse dal testo.
 - `[redacted]` viene rilevato come redazione anche in minuscolo.
 - Se nessun destinatario e' disponibile nei campi recipient, `to_recipients` viene impostato a `Unknown` e `person_unknown` a `True`.
 - `person_unknown` non rileva recipient potenzialmente censurati dentro campi recipient gia' valorizzati; per quello servirebbe una feature distinta, ad esempio `recipient_redacted`.
 - `recipient_count_estimate` non deve essere nullo nelle righe finali; in presenza di `Unknown` vale almeno 1.
+- `content_new_is_short=True` è un flag diagnostico e non determina la logica di downstream; `content_new` contiene comunque il testo originale senza il thread.
+- `content_quoted` è `null` (o `NaN` in pandas) quando `has_thread=False`; non deve essere stringa vuota.
+- `split_body_thread` opera su `content_markdown` (raw, pre-normalizzazione) per preservare i newline necessari alle ancore `(?m)^` dei pattern di rilevamento. `content_clean` è usata solo come fallback se `content_markdown` è assente. Il disclaimer legale (rimosso da `content_clean` via `split_body_disclaimer`) può comparire in `content_quoted` quando presente nel thread tail: comportamento atteso.
 - `is_promotional == True` viene escluso.
 - Le colonne raw mantenute non sono normalizzate.
 - Le nuove colonne ausiliarie per feature statistiche richiedono aggiornamento di questo contratto.
