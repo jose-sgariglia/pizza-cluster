@@ -395,6 +395,44 @@ File o artefatti coinvolti:
 Approvazione:
 - Approvata dall'utente il 2026-06-17 a valle del confronto su K-Means.
 
+## 2026-06-19 - Tuning Iperparametri UMAP+HDBSCAN con CMA-ES
+
+Stato: Approved
+
+Contesto:
+
+L'approccio manuale basato su Grid Search per l'ottimizzazione di UMAP e HDBSCAN non scalava in modo efficiente per dataset complessi e produceva combinazioni sub-ottimali. Era necessario un approccio dinamico per gestire i parametri. Inoltre, la visualizzazione di HDBSCAN causava crash dovuti a `np.inf` nelle distanze dei nodi sovrapposti (bug ellissi in matplotlib).
+
+Decisione:
+1. Utilizzare Optuna con campionatore CMA-ES (Covariance Matrix Adaptation Evolution Strategy) per ottimizzare gli iperparametri geometrici e di densità.
+2. Configurazione finale adottata su dataset da 1.75M: `n_neighbors=51`, `n_components=12`, `min_cluster_size=71`, `min_samples=100`, `cluster_selection_method='eom'`.
+3. Disabilitare le selezioni grafiche ad ellisse (`select_clusters=False`) nei grafici dell'albero condensato di HDBSCAN per evitare bug di Matplotlib legati a lambda infiniti (punti duplicati esatti).
+
+Alternative considerate:
+- RandomSearch / Grid Search: Scartate per la convergenza troppo lenta in un search space 4-dimensionale continuo/discreto.
+- HDBSCAN diretto: Scartato per i colli di bottiglia computazionali.
+
+Pro:
+- Incremento drastico del Silhouette Score sul sample validato (~0.63).
+- Convergenza rapida e intelligente ai parametri topologici ideali, individuando 22 macro-argomenti robusti contro il rumore.
+
+Contro:
+- Configurazione avanzata dell'obiettivo per correggere parametri non supportati nativamente da CMA-ES (necessità di logica di fallback per interi e limiti statici).
+
+Impatto:
+- `src/notebooks/clustering_umap_hdbscan.ipynb` aggiornato.
+- Riscritta la pipeline di soft-clustering (Softmax).
+- Creata la knowledge base `09_cma_es_hyperparameter_tuning.md`.
+
+File o artefatti coinvolti:
+- `src/utils/optuna_clustering.py`
+- `src/notebooks/clustering_umap_hdbscan.ipynb`
+- `docs/knowledge/09_cma_es_hyperparameter_tuning.md`
+
+Approvazione:
+- Approvata dall'utente il 2026-06-19.
+
+
 ## 2026-06-19 - Fonte del thread-splitting: content_markdown invece di content_clean
 
 Stato: Approved
