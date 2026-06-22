@@ -198,6 +198,28 @@ Nessun task bloccato.
 
 ## Done
 
+### Campionamento Casuale Stratificato Email per Ispezione
+
+Owner: Filippo (Antigravity)
+Stream: Validazione Qualitativa
+Branch: `feature/random-email-sampling`
+Stato: Done
+
+Scopo:
+Creare un notebook per estrarre 100 email casuali dal dataset finale clusterizzato (`jmail_emails_clustered.parquet`) utilizzando un campionamento stratificato sui cluster e stamparne il contenuto in un file testuale (.md) comodo per la validazione umana.
+
+Handoff:
+Owner: Filippo (Antigravity)
+Stream: Validazione Qualitativa
+Branch: `feature/random-email-sampling`
+Task: Campionamento Casuale Stratificato Email per Ispezione
+File creati/modificati:
+- `src/notebooks/cluster_random_sampling.ipynb`
+- `TASK_BOARD.md`
+Test: N/A (notebook esplorativo basato su dataset)
+Output: Notebook creato e formattato, produrrà in output il file `reports/100_random_emails_inspection.md`.
+Rischi: Nessuno, è uno script esplorativo read-only.
+
 ### Ottimizzazione Iperparametri UMAP e HDBSCAN (Dataset 1.75M)
 
 Owner: Filippo (Antigravity)
