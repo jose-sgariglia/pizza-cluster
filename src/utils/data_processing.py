@@ -449,20 +449,39 @@ def remove_empty_text_rows(df: pd.DataFrame) -> pd.DataFrame:
 
 def apply_embedding_template(df: pd.DataFrame, template: str) -> pd.DataFrame:
     """Apply a structured template to create the final text for embeddings.
-    
-    Placeholder names in template should match column names.
+
+    For emails without a thread, BODY uses content_clean.
+    For emails with a thread, BODY uses content_new (sender's text only) and
+    the quoted tail is appended under a THREAD: section.
+    Falls back to content_clean when content_new is empty.
     """
     result = df.copy()
-    
+
     def format_row(row):
+        has_thread = bool(row.get("has_thread", False))
+        content_new = row.get("content_new", "")
+        content_new_str = str(content_new) if content_new is not None else ""
+
+        if has_thread and content_new_str.strip():
+            body = content_new_str
+        else:
+            body = row.get("content_clean", "No Content")
+
+        thread_section = ""
+        if has_thread:
+            quoted = row.get("content_quoted")
+            if quoted and str(quoted).strip():
+                thread_section = f"\n\nTHREAD:\n{quoted}"
+
         return template.format(
             date=row.get("sent_at", "Unknown"),
             sender=row.get("sender", "Unknown"),
             recipients=row.get("to_recipients", "Unknown"),
             subject=row.get("subject_clean", "No Subject"),
-            body=row.get("content_clean", "No Content")
+            body=body,
+            thread_section=thread_section,
         )
-    
+
     result["combined_text"] = result.apply(format_row, axis=1)
     result["combined_text_length"] = result["combined_text"].str.len().fillna(0).astype("Int64")
     return result

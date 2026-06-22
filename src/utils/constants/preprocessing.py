@@ -79,7 +79,7 @@ TO: {recipients}
 SUBJECT: {subject}
 
 BODY:
-{body}"""
+{body}{thread_section}"""
 
 # Structural delimiter: a line composed entirely of 2+ repeated -, _, =, or * characters.
 # Used as the first signal in disclaimer splitting (requires keyword confirmation).

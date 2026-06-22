@@ -9,6 +9,7 @@ import pandas as pd
 from src.utils.data_processing import (
     add_text_features,
     add_thread_features,
+    apply_embedding_template,
     build_processing_paths,
     estimate_recipient_count,
     estimate_recipient_counts,
@@ -521,6 +522,77 @@ class ThreadSplitTestCase(unittest.TestCase):
         result = add_thread_features(df)
         self.assertTrue(result.loc[0, "has_thread"],
                         "add_thread_features must use content_markdown, not content_clean")
+
+
+class ApplyEmbeddingTemplateTestCase(unittest.TestCase):
+    """Tests for the thread-aware apply_embedding_template()."""
+
+    _TEMPLATE = (
+        "DATE: {date}\nFROM: {sender}\nTO: {recipients}\nSUBJECT: {subject}"
+        "\n\nBODY:\n{body}{thread_section}"
+    )
+
+    def _make_df(self, **kwargs) -> pd.DataFrame:
+        defaults = {
+            "sent_at": "2020-01-01T00:00:00Z",
+            "sender": "a@example.com",
+            "to_recipients": "b@example.com",
+            "subject_clean": "Hello",
+            "content_clean": "Full body text.",
+            "content_new": "",
+            "content_quoted": None,
+            "has_thread": False,
+        }
+        defaults.update(kwargs)
+        return pd.DataFrame([defaults])
+
+    def test_no_thread_uses_content_clean(self) -> None:
+        df = self._make_df(has_thread=False, content_clean="Full body.", content_new="")
+        result = apply_embedding_template(df, self._TEMPLATE)
+        combined = result.loc[0, "combined_text"]
+        self.assertIn("Full body.", combined)
+        self.assertNotIn("THREAD:", combined)
+
+    def test_thread_uses_content_new_as_body(self) -> None:
+        df = self._make_df(
+            has_thread=True,
+            content_new="Short reply.",
+            content_quoted="> Previous message.",
+            content_clean="Short reply. > Previous message.",
+        )
+        result = apply_embedding_template(df, self._TEMPLATE)
+        combined = result.loc[0, "combined_text"]
+        self.assertIn("Short reply.", combined)
+        # content_clean (flat full text) must NOT appear verbatim
+        self.assertNotIn("Short reply. > Previous message.", combined)
+
+    def test_thread_appends_thread_section(self) -> None:
+        df = self._make_df(
+            has_thread=True,
+            content_new="Short reply.",
+            content_quoted="> Previous message.",
+            content_clean="Short reply. > Previous message.",
+        )
+        result = apply_embedding_template(df, self._TEMPLATE)
+        combined = result.loc[0, "combined_text"]
+        self.assertIn("THREAD:", combined)
+        self.assertIn("> Previous message.", combined)
+
+    def test_empty_content_new_falls_back_to_content_clean(self) -> None:
+        df = self._make_df(
+            has_thread=True,
+            content_new="",
+            content_quoted="> Something.",
+            content_clean="Full body including thread.",
+        )
+        result = apply_embedding_template(df, self._TEMPLATE)
+        combined = result.loc[0, "combined_text"]
+        self.assertIn("Full body including thread.", combined)
+
+    def test_combined_text_length_is_updated(self) -> None:
+        df = self._make_df(has_thread=False, content_clean="Hello.")
+        result = apply_embedding_template(df, self._TEMPLATE)
+        self.assertGreater(int(result.loc[0, "combined_text_length"]), 0)
 
 
 if __name__ == "__main__":
