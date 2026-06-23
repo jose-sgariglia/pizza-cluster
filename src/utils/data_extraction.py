@@ -22,7 +22,7 @@ import pyarrow.parquet as pq
 import requests
 from dotenv import dotenv_values
 
-
+ROOT = "../../"
 DEFAULT_ENV_FILE = ".env"
 DEFAULT_ENDPOINT = "v1/emails.parquet"
 DEFAULT_RAW_FILENAME = "jmail_emails.parquet"
@@ -72,8 +72,8 @@ class ExtractionConfig:
 
         values = dotenv_values(env_file)
         jmail_api = values.get("JMAIL_API")
-        raw_path = values.get("DATA_RAW_PATH", "data/raw/")
-        metadata_path = values.get("METADATA_PATH", "data/metadata/")
+        raw_path = ROOT + values.get("DATA_RAW_PATH", "data/raw/")
+        metadata_path = ROOT +values.get("METADATA_PATH", "data/metadata/")
         endpoint = values.get("JMAIL_EMAILS_ENDPOINT", DEFAULT_ENDPOINT)
         raw_name = raw_filename or values.get("RAW_EMAILS_FILENAME", DEFAULT_RAW_FILENAME)
         metadata_name = metadata_filename or values.get("EXTRACTION_METADATA_FILENAME", DEFAULT_METADATA_FILENAME)

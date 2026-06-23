@@ -211,7 +211,7 @@ data/raw/*
 data/processed/*
 data/embeddings/*
 data/metadata/*
-data/validation/
+data/validation/*
 models/embeddings/*
 models/trained/*
 models/checkpoints/*
