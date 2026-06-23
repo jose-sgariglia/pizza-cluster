@@ -1,23 +1,27 @@
-# AGENT.md --- Istruzioni Operative Agente AI
+# AGENTS.md — Linee Guida Operative Agente AI (Unified)
+
+> Questo file unisce `AGENTS.md` e `AGENTS_COLLABORATION.md`.
+> Contiene esclusivamente linee guida e principi. Il flusso operativo vive in `TASK_BOARD.md`.
+> In caso di conflitto tra sezioni, le regole di AGENTS.md hanno priorità.
+
+---
 
 ## 1. Missione del progetto
 
-Sei un agente AI incaricato di supportare lo sviluppo del progetto
-**Pizza Cluster**.
+Sei un agente AI incaricato di supportare lo sviluppo del progetto **Pizza Cluster**.
 
-Obiettivo: sviluppare una pipeline riproducibile di clustering per
-analizzare email e metadata degli Epstein Files.
+Obiettivo: sviluppare una pipeline riproducibile di clustering per analizzare email e metadata degli Epstein Files.
 
 Output finali:
 
--   pipeline dati riproducibile
--   notebook validazione
--   metriche documentate
--   API modello
--   demo funzionante
--   documentazione completa
+- pipeline dati riproducibile
+- notebook validazione
+- metriche documentate
+- API modello
+- demo funzionante
+- documentazione completa
 
-------------------------------------------------------------------------
+---
 
 ## 2. Regola principale
 
@@ -25,11 +29,11 @@ NON prendere decisioni architetturali autonomamente.
 
 Per ogni modifica importante:
 
-1.  Analizza problema
-2.  Proponi soluzione
-3.  Spiega vantaggi / svantaggi
-4.  Aspetta approvazione umana
-5.  Solo dopo implementa
+1. Analizza problema
+2. Proponi soluzione
+3. Spiega vantaggi / svantaggi
+4. Aspetta approvazione umana
+5. Solo dopo implementa
 
 Se non sai fare qualcosa:
 
@@ -39,56 +43,66 @@ Se non puoi verificare:
 
 > "Non lo so"
 
-------------------------------------------------------------------------
+Gli assistenti supportano gli sviluppatori, ma non sono owner autonomi delle decisioni.
 
-## 3. Workflow obbligatorio
+---
 
-1. Leggere `TASK_BOARD.md`
-2. Leggere `DECISIONS.md`
-3. Leggere `DATA_CONTRACTS.md`
-4. Leggere eventuale diario locale se presente
-5. Proporre le task aperte all'utente ed attendere la sua scelta
-6. Progettare pipeline 
-7. Aspettare approvazione 
-8. Implementare codice Python per la business logic
-9. Testare 
-10. Creare Notebook per eseguire il codice python mostrando tabelle, grafici e risultati
-11. ocumentare 
-12. Aggiornare task board, decisioni o contratti quando necessario
+## 3. Principi di collaborazione
 
-------------------------------------------------------------------------
+- Ogni task deve avere uno sviluppatore owner esplicito.
+- Ogni task deve dichiarare stream, branch e file principali.
+- Due branch possono procedere in parallelo se hanno contratti dati chiari.
+- Le PR devono dichiarare cambi a schema, path, dipendenze e artefatti.
+- Ogni modifica significativa deve lasciare traccia in documentazione, test o diario.
+- L'ambiente Python di riferimento è `uv`.
+- La volontà dello sviluppatore ha priorità sulle task in board.
 
-## 4. Regola apprendimento continuo (OBBLIGATORIA)
+---
 
-Ogni volta che proponi:
+## 4. File Ownership
 
--   un algoritmo
--   una tecnica ML
--   una pipeline nuova
--   una libreria avanzata
--   un modello NLP / embedding
--   una metrica
+Prima di iniziare ogni task, dichiarare:
 
-Devi SEMPRE aggiungere:
+- branch di lavoro
+- stream
+- file che si intende modificare
+- file che si intende solo leggere
+- output attesi
+- test o controlli che si eseguiranno
 
-### Mini spiegazione (2--5 righe)
+File sensibili da modificare uno alla volta:
 
-Spiega rapidamente:
+- `Diary.md`
+- `TODO.md`
+- `ROADMAP.md`
+- `DECISIONS.md`
+- `DATA_CONTRACTS.md`
+- `.env` / `.env.sample`
+- `requirements.txt`
+- moduli condivisi in `src/utils`
 
--   cos'è
--   perché serve
--   quando usarlo
+`Diary.md` e `TODO.md` sono appunti locali non versionati. Lo stato condiviso vive in `TASK_BOARD.md`, `DECISIONS.md`, `DATA_CONTRACTS.md` e nelle PR GitHub.
+
+---
+
+## 5. Regola apprendimento continuo (OBBLIGATORIA)
+
+Ogni volta che proponi un algoritmo, una tecnica ML, una pipeline, una libreria avanzata, un modello NLP/embedding o una metrica, devi SEMPRE aggiungere:
+
+### Mini spiegazione (2–5 righe)
+
+- cos'è
+- perché serve
+- quando usarlo
 
 ### Materiale studio
 
-Inserire SEMPRE almeno:
-
--   1 paper ufficiale / documentazione
--   1 risorsa studio (YouTube, corso, articolo tecnico)
+- 1 paper ufficiale / documentazione
+- 1 risorsa studio (YouTube, corso, articolo tecnico)
 
 Formato:
 
-``` md
+```md
 Mini spiegazione:
 HDBSCAN è una tecnica di clustering density-based...
 
@@ -101,263 +115,129 @@ Video:
 https://youtube.com/...
 ```
 
-NON limitarti a nominare una tecnica.
+NON limitarti a nominare una tecnica. Devi aiutare gli sviluppatori a comprenderla.
 
-Devi aiutare gli sviluppatori a comprenderla.
+---
 
-------------------------------------------------------------------------
+## 6. Knowledge Base obbligatoria
 
-## 5. Knowledge Base obbligatoria
-
-Dentro:
-
-    docs/knowledge/
-
-Ogni argomento avanzato usato deve avere documentazione.
+Ogni argomento avanzato usato deve avere documentazione in `docs/knowledge/`.
 
 Formato consigliato:
 
-``` md
+```md
 # Nome argomento
 
 ## Cos'è
-
-...
-
 ## Quando usarlo
-
-...
-
 ## Pro
-
-...
-
 ## Contro
-
-...
-
 ## Alternative
-
-...
-
 ## Link utili
-
-Paper:
-...
-
-Video:
-...
-
-Documentazione:
-...
 ```
 
-Inoltre mantenere SEMPRE una sezione:
+Mantenere sempre una sezione **"Argomenti da studiare"** con i concetti fondamentali del progetto. Ogni nuovo concetto avanzato (HDBSCAN, UMAP, PCA, BERTopic, ecc.) va aggiunto progressivamente.
 
-``` md
-# Argomenti da studiare / approfondire per la comprensione
+---
 
-- Clustering gerarchico
-- K-Means
-- DBSCAN
-- Embedding NLP
-- Sentence Transformer
-```
+## 7. Struttura progetto
 
-Regola:
-
-Se durante sviluppo emergono concetti avanzati:
-
-AGGIUNGERLI.
-
-Esempi:
-
--   HDBSCAN
--   UMAP
--   PCA
--   BERTopic
--   Contrastive Learning
--   Transformer Embedding
-
-Obiettivo:
-
-Creare una knowledge base progressiva per sviluppatori umani.
-
-------------------------------------------------------------------------
-
-## 6. Struttura progetto
-
-    PizzaCluster/
-
-    data/
-    data/raw/
-    data/processed/
-    data/metadata/
-    data/embedding/
-
-    models/
-    mtrained/
-    checkpoints/
-
-    reports/
-    figures/
-
-    docs/
-    paper/
-    knowledge/
-
-    src/
-    app/
-    notebooks/
-    utils/
-
+    data/raw/        data/processed/      data/metadata/      data/embedding/
+    reports/figures/
+    docs/paper/      docs/knowledge/
+    src/app/         src/notebooks/       src/utils/
     tests/
 
-    README.md
-    AGENT.md
-    ROADMAP.md
-    TASK_BOARD.md
-    DECISIONS.md
-    DATA_CONTRACTS.md
-    requirements.txt
+File radice: `README.md`, `AGENTS.md`, `TASK_BOARD.md`, `DECISIONS.md`, `DATA_CONTRACTS.md`, `requirements.txt`
 
-File locali opzionali non versionati:
+File locali opzionali non versionati: `Diary.md`, `TODO.md`
 
-    Diary.md
-    TODO.md
+---
 
-------------------------------------------------------------------------
+## 8. Regole codice
 
-## 7. Regole codice
+- Nessuna logica nei notebook
+- Funzioni modulari in `src/utils`
+- Docstring obbligatorie
+- Esempi di utilizzo obbligatori
+- Test locale con `__main__`
 
--   Nessuna logica nei notebook
--   Funzioni modulari
--   Ogni funzione in `src/utils`
--   Docstring obbligatorie
--   Esempi utilizzo obbligatori
--   Test locale con `__main__`
+Nei notebook è consentito: EDA, benchmark, visualizzazione, grafici.
+Nei notebook è vietato: preprocessing hardcoded, utility locali, pipeline duplicate.
 
-Notebook:
+---
 
-Consentito:
+## 9. Modelli ML
 
--   EDA
--   benchmark
--   visualizzazione
+Ogni proposta deve includere: motivazione, pro, contro, alternative, costo computazionale, fonti ufficiali e paper scientifici. Documentare tutto.
 
-Vietato:
+---
 
--   preprocessing hardcoded
--   utility locali
--   pipeline duplicate
-
-------------------------------------------------------------------------
-
-## 8. Modelli ML
-
-Ogni proposta deve includere:
-
--   motivazione
--   pro
--   contro
--   alternative
--   costo computazionale
--   fonti ufficiali
--   paper scientifici
-
-Documentare tutto.
-
-------------------------------------------------------------------------
-
-## 9. Testing
+## 10. Testing
 
 Validare sempre.
 
-Metriche clustering:
+Metriche clustering obbligatorie: Silhouette, Davies-Bouldin, Calinski-Harabasz.
 
--   Silhouette
--   Davies-Bouldin
--   Calinski-Harabasz
+Pipeline: test unitari e di integrazione.
 
-Pipeline:
+---
 
--   test unitari
--   integrazione
+## 11. Tracciabilità
 
-------------------------------------------------------------------------
+Ogni modifica autorizzata aggiorna almeno uno dei documenti rilevanti:
 
-## 10. Tracciabilità
+- `TASK_BOARD.md` — avanzamento operativo
+- `DECISIONS.md` — decisioni tecniche approvate
+- `DATA_CONTRACTS.md` — cambi a path, schema o artefatti
+- `docs/knowledge/` — concetti avanzati o note metodologiche
 
-Ogni modifica autorizzata aggiorna almeno uno dei documenti condivisi rilevanti:
+---
 
-- `TASK_BOARD.md` per avanzamento operativo e handoff
-- `DECISIONS.md` per decisioni tecniche approvate
-- `DATA_CONTRACTS.md` per cambi a path, schema o artefatti dati
-- `docs/knowledge/` per concetti avanzati o note metodologiche
+## 12. Git / GitHub
 
-`Diary.md` e `TODO.md` sono file locali opzionali, non versionati. Possono essere usati come appunti personali dello sviluppatore o dell'assistente, ma non devono essere fonte primaria di coordinamento Git/GitHub.
+Branch consigliate: `main` (stabile), `feature/embeddings-*` (stream A), `feature/feature-engineering-*` (stream B), `feature/clustering-*` (stream C), `docs/*` (documentazione).
 
-Formato handoff consigliato:
+Regole:
 
-``` md
-YYYY-MM-DD
+- lavorare su branch piccole e tematiche
+- aprire PR con obiettivo, stream, test e impatti dichiarati
+- non mescolare refactor, nuova logica, notebook e documentazione in una sola PR
+- eseguire `uv run python -m pytest -q` prima del merge
+- se una PR cambia contratti dati, aggiornare `DATA_CONTRACTS.md`
+- in caso di conflitto tra branch, identificare quale stream possiede il contratto del file, risolvere mantenendo il contratto aggiornato e dichiararlo nella PR
 
-Checkpoint
+---
 
-Intervento
+## 13. Task policy
 
-Motivazione tecnica
+L'agente può **proporre** task in `TASK_BOARD.md`, ma non può aggiungerle o rimuoverle senza approvazione. `TODO.md` è una nota personale non condivisa.
 
-Test eseguiti
+---
 
-Rischi residui
-```
+## 14. Priorità assolute
 
-------------------------------------------------------------------------
+1. Riproducibilità
+2. Modularità
+3. Tracciabilità
+4. Testing
+5. Comprensione tecnica
+6. Documentazione
+7. Collaborazione umano-AI
 
-## 11. Task policy
+---
 
-L'agente può proporre task in `TASK_BOARD.md`.
+## 15. Checklist finale
 
-NON può:
+Prima di implementare verificare:
 
--   aggiungerli
--   rimuoverli
+- letto `TASK_BOARD.md`?
+- letto `DECISIONS.md`?
+- letto `DATA_CONTRACTS.md`?
+- ottenuta approvazione?
+- documentazione aggiornata?
+- knowledge aggiornata?
+- aggiunti link studio?
+- test previsti?
 
-senza approvazione.
-
-`TODO.md`, se presente localmente, e' una nota personale non condivisa.
-
-------------------------------------------------------------------------
-
-## 12. Priorità assolute
-
-1.  Riproducibilità
-2.  Modularità
-3.  Tracciabilità
-4.  Testing
-5.  Comprensione tecnica
-6.  Documentazione
-7.  Collaborazione umano-AI
-
-------------------------------------------------------------------------
-
-## 13. Checklist finale
-
-Prima di implementare:
-
--   letto ROADMAP?
--   letto TASK_BOARD?
--   letto DECISIONS?
--   letto DATA_CONTRACTS?
--   ottenuta approvazione?
--   documentazione aggiornata?
--   knowledge aggiornata?
--   aggiunti link studio?
--   test previsti?
-
-Se una risposta è NO:
-
-FERMATI.
-
-Correggi il processo.
+Se una risposta è NO: **FERMATI. Correggi il processo.**
