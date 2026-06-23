@@ -32,7 +32,7 @@ Prima di implementare, presenta una proposta e **attendi approvazione**. La prop
 | Preprocessing | pipeline_processing.ipynb                                                  | feature_engineering.ipynb                                       |
 | Embedding | embedding_pipeline.py, final_embedding_validation.ipynb                    | Tutti i file contenenti altri informazioni riguardo agli embedding |
 | Clustering | clustering_optuna_tuning.ipynb, clustering_umap_hdbscan_thread_aware.ipynd | Tutti i file contenenti altri informazioni riguardo i cluter    |
-| Labelling | llm_cluster_naming_experiment.ipynb                                        |                                                   |
+| Labelling | llm_cluster_naming_experiment.ipynb                                        | clean-up branch<br/>                                                  |
 
 ---
 

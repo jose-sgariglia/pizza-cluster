@@ -318,6 +318,40 @@ Decisioni mancanti:
 - paginazione;
 - campi esposti per email redatte o sensibili.
 
+## Validation Output
+
+Stato: Approved
+
+Path:
+
+- `data/validation/all_label.md` — tabella cluster ID → nome → n_email
+- `data/validation/_{id}/mail.md` — corpo email (subject, sender, to, content_clean)
+- `data/validation/_{id}/label.md` — etichette assegnate dal modello (cluster, nome, probabilità)
+
+Formato:
+
+- Markdown (`.md`)
+
+Prodotto da:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb` (Fase 7)
+
+Input:
+
+- `data/processed/jmail_emails_clustered.parquet`
+- `data/metadata/cluster_labeling_metadata.json`
+
+Parametri fissi:
+
+- Campione: 100 email con `SEED` globale fisso (riproducibile)
+- Campionamento: casuale uniforme su tutte le email (non stratificato per cluster)
+
+Vincoli:
+
+- `data/validation/` non è versionato in git (aggiungere a `.gitignore` se non già presente).
+- `_{id}/` usa il campo `id` del dataset processato come nome cartella.
+- `mail.md` contiene solo `content_clean` (non `content_markdown` raw) per sicurezza.
+
 ## Topic Labeling Metadata
 
 Stato: Proposed

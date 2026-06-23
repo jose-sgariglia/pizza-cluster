@@ -483,3 +483,105 @@ File o artefatti coinvolti:
 Approvazione:
 
 - Approvata dall'utente il 2026-06-19 dopo analisi diagnostica documentata in `reports/thread_discrepancy_analysis.md`.
+
+## 2026-06-23 - Full pipeline orchestrator: logica in src/utils, notebook come orchestratore sottile
+
+Stato: Approved
+
+Contesto:
+
+La pipeline finale (raw → label) deve essere orchestrata da un unico notebook in `src/notebooks/`. Tutti i moduli `src/utils/` già contengono la business logic canonica. La scelta tra tenerla nel notebook (deroga) o mantenerla in `src/utils/` (conforme a AGENTS §8) è stata posta allo sviluppatore.
+
+Decisione:
+
+Opzione A: nessuna logica nel notebook, solo chiamate alle funzioni canoniche di `src/utils/`. Il notebook è un orchestratore sottile. Nessun refactor preventivo necessario (la logica è già nei moduli).
+
+Alternative considerate:
+
+- Opzione B (deroga): logica inline nel notebook, registrata come eccezione in `DECISIONS.md`. Scartata.
+
+Pro:
+
+- Conforme a AGENTS §8.
+- Nessuna duplicazione di logica.
+- Tutti i moduli già testati e validati.
+
+Contro:
+
+- Richiede che `src/utils/` sia sempre allineato con le esigenze della pipeline; eventuali future feature richiedono modifiche ai moduli.
+
+Impatto:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb` riscritto da zero come orchestratore sottile.
+- Nessuna modifica a `src/utils/`.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-23.
+
+## 2026-06-23 - Omissione ARI/NMI e Recall@K/MRR dalla pipeline finale
+
+Stato: Approved
+
+Contesto:
+
+Il prompt della pipeline finale prevedeva ARI/NMI e Recall@K/MRR come metriche. Entrambe richiedono un ground truth o un protocollo di retrieval definito. Il dataset Epstein Files non ha etichette di verità disponibili, e nessun protocollo di retrieval è stato definito.
+
+Decisione:
+
+- ARI/NMI: omessi. Senza ground truth non hanno significato assoluto. Confrontare KMeans vs HDBSCAN come pseudo-label sarebbe metodologicamente fuorviante.
+- Recall@K/MRR: omessi. Protocollo retrieval non definito.
+- Metriche adottate: Silhouette Score, Davies-Bouldin Score, Calinski-Harabasz Score (già previste da AGENTS §9), calcolate su sottocampione con seed fisso.
+
+Alternative considerate:
+
+- Mantenere ARI/NMI come confronto KMeans vs HDBSCAN con disclaimer: scartato per rischio di interpretazione erronea.
+
+Impatto:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb` usa solo le 3 metriche standard.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-23.
+
+## 2026-06-23 - Riuso parametri Optuna esistenti per la pipeline finale
+
+Stato: Approved
+
+Contesto:
+
+I parametri UMAP+HDBSCAN ottimali sono stati trovati il 2026-06-19 tramite Optuna CMA-ES su un campione da 15k email (Silhouette ~0.63, 22 macro-cluster). Eseguire un nuovo tuning sul server del laboratorio richiederebbe ore aggiuntive senza garanzia di miglioramento.
+
+Decisione:
+
+Usare i parametri esistenti (`n_neighbors=51`, `n_components=12`, `min_cluster_size=71`, `min_samples=100`, `cluster_selection_method='eom'`) come default nella pipeline finale tramite il flag `RERUN_OPTUNA=False`. Il flag `RERUN_OPTUNA=True` è disponibile per ri-eseguire il tuning se necessario.
+
+Pro:
+
+- Risparmio computazionale sul server del laboratorio.
+- Parametri già validati su 1.75M email.
+
+Contro:
+
+- Se il dataset è cambiato significativamente, i parametri potrebbero essere sub-ottimali.
+
+Impatto:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb`: flag `RERUN_OPTUNA` nella cella di config.
+
+File o artefatti coinvolti:
+
+- `src/notebooks/full_pipeline_orchestration.ipynb`
+
+Approvazione:
+
+- Approvata dall'utente il 2026-06-23.
