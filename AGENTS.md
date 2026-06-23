@@ -43,17 +43,17 @@ Se non puoi verificare:
 
 ## 3. Workflow obbligatorio
 
-1.  Leggere `ROADMAP.md`
-2.  Leggere `TASK_BOARD.md`
-3.  Leggere `DECISIONS.md`
-4.  Leggere `DATA_CONTRACTS.md`
-5.  Leggere eventuale diario locale se presente
-6.  Scegliere task
-7.  Progettare pipeline
-8.  Aspettare approvazione
-9.  Implementare
-10. Testare
-11. Documentare
+1. Leggere `TASK_BOARD.md`
+2. Leggere `DECISIONS.md`
+3. Leggere `DATA_CONTRACTS.md`
+4. Leggere eventuale diario locale se presente
+5. Proporre le task aperte all'utente ed attendere la sua scelta
+6. Progettare pipeline 
+7. Aspettare approvazione 
+8. Implementare codice Python per la business logic
+9. Testare 
+10. Creare Notebook per eseguire il codice python mostrando tabelle, grafici e risultati
+11. ocumentare 
 12. Aggiornare task board, decisioni o contratti quando necessario
 
 ------------------------------------------------------------------------
@@ -190,12 +190,13 @@ Creare una knowledge base progressiva per sviluppatori umani.
     PizzaCluster/
 
     data/
-    raw/
-    processed/
-    metadata/
+    data/raw/
+    data/processed/
+    data/metadata/
+    data/embedding/
 
     models/
-    trained/
+    mtrained/
     checkpoints/
 
     reports/
