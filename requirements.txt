@@ -1,3 +1,6 @@
+# NVIDIA index — necessario per cuml-cu12 (lab GPU)
+--extra-index-url https://pypi.nvidia.com
+
 annotated-doc==0.0.4
 anyio==4.13.0
 argon2-cffi==25.1.0
