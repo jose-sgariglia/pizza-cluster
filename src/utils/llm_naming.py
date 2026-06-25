@@ -62,6 +62,50 @@ def get_llm_cluster_name(keywords: List[str], model: str = "llama3") -> str:
         # Fallback to the top 2 keywords if the API fails
         return " / ".join(keywords[:2]) if len(keywords) >= 2 else keywords[0]
 
+def get_llm_cluster_name_from_emails(emails: List[str], model: str = "llama3") -> str:
+    """
+    Given a list of emails (cluster exemplars), use a local Ollama LLM to generate 
+    a short, 1-2 word descriptive name for the cluster.
+    """
+    if not emails:
+        return "Noise / Unknown"
+        
+    url = "http://localhost:11434/api/chat"
+    
+    # Tronca ogni email a ~500 caratteri per evitare di superare il context window
+    truncated_emails = [e[:500] for e in emails]
+    emails_text = "\n---\n".join(truncated_emails)
+    
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a specialized summarizer. Read the following samples from an email cluster and output EXACTLY ONE SHORT NAME (max 3 words) that best describes their common topic. Absolutely nothing else. Stop immediately after the name."
+            },
+            {
+                "role": "user",
+                "content": f"Emails:\n{emails_text}"
+            }
+        ],
+        "stream": False,
+        "options": {
+            "temperature": 0.0,
+        }
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=300)
+        response.raise_for_status()
+        result = response.json()
+        name = result.get("message", {}).get("content", "").strip()
+        
+        name = name.strip('"').strip("'").strip('*').strip('.')
+        return name
+    except Exception as e:
+        logging.error(f"Error calling Ollama API for model {model}: {e}")
+        return "Fallback Name"
+
 if __name__ == "__main__":
     # Test rapido di connessione a Ollama locale
     test_keywords = ["flight", "private jet", "travel", "epstein", "airport", "schedule"]
