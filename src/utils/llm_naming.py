@@ -2,7 +2,7 @@ import requests
 import logging
 from typing import List
 
-def get_llm_cluster_name(keywords: List[str], model: str = "llama3") -> str:
+def get_llm_cluster_name(keywords: List[str], model: str = "mannix/llama3.1-8b-abliterated") -> str:
     """
     Given a list of keywords, use a local Ollama LLM to generate a short, 
     1-2 word descriptive name for the cluster.
@@ -62,7 +62,7 @@ def get_llm_cluster_name(keywords: List[str], model: str = "llama3") -> str:
         # Fallback to the top 2 keywords if the API fails
         return " / ".join(keywords[:2]) if len(keywords) >= 2 else keywords[0]
 
-def get_llm_cluster_name_from_emails(emails: List[str], model: str = "llama3") -> str:
+def get_llm_cluster_name_from_emails(emails: List[str], model: str = "mannix/llama3.1-8b-abliterated") -> str:
     """
     Given a list of emails (cluster exemplars), use a local Ollama LLM to generate 
     a short, 1-2 word descriptive name for the cluster.
